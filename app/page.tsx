@@ -1,20 +1,32 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { WelcomeScreen } from '@/components/screens/WelcomeScreen';
-import { SplashScreen } from '@/components/screens/SplashScreen';
-import { AuthScreen } from '@/components/screens/AuthScreen';
-import { useToast } from '@/components/design-system/Toast';
-import { Logo } from '@/components/design-system/Logo';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
+import {
+  SplashScreen,
+  WelcomeScreen,
+  AuthScreen,
+  OnboardingScreen,
+  CanvasScreen,
+} from '@/components/screens';
+import { OnboardingData } from '@/components/screens/OnboardingScreen';
 
-type ScreenType = 'splash' | 'welcome' | 'auth' | 'onboarding';
+type ScreenType = 'splash' | 'welcome' | 'auth' | 'onboarding' | 'canvas';
 
 export default function NoevisApp() {
   const [screen, setScreen] = useState<ScreenType>('welcome');
   const [userEmail, setUserEmail] = useState<string>('');
-  const { info } = useToast();
+
+  // Initialize saved onboarding data lazily
+  const [onboardingData, setOnboardingData] = useState<Partial<OnboardingData>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const savedData = localStorage.getItem('noevis_onboarding_data');
+      return savedData ? JSON.parse(savedData) : {};
+    } catch {
+      return {};
+    }
+  });
 
   const handleStartLearning = () => {
     setScreen('auth');
@@ -22,6 +34,36 @@ export default function NoevisApp() {
 
   const handleAuthSuccess = (userInfo: { email: string; method: 'google' | 'email' }) => {
     setUserEmail(userInfo.email);
+
+    // Check if user already completed onboarding
+    try {
+      const isCompleted = localStorage.getItem('noevis_onboarding_completed') === 'true';
+      if (isCompleted) {
+        setScreen('canvas');
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Default to onboarding flow
+    setScreen('onboarding');
+  };
+
+  const handleOnboardingComplete = (data: OnboardingData) => {
+    setOnboardingData(data);
+    setScreen('canvas');
+  };
+
+  const handleResetOnboarding = () => {
+    try {
+      localStorage.removeItem('noevis_onboarding_completed');
+      localStorage.removeItem('noevis_onboarding_data');
+      localStorage.removeItem('noevis_onboarding_draft');
+    } catch {
+      // ignore
+    }
+    setOnboardingData({});
     setScreen('onboarding');
   };
 
@@ -44,43 +86,21 @@ export default function NoevisApp() {
         )}
 
         {screen === 'onboarding' && (
-          <motion.div
-            key="onboarding-placeholder"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
-            className="min-h-[100dvh] w-full flex flex-col justify-between px-6 py-10 items-center bg-[#F7F8FA]"
-          >
-            <div className="w-full max-w-xl mx-auto flex flex-col items-center text-center my-auto pt-12">
-              <Logo size="welcome" variant="full" className="mb-8" />
-              <div className="w-12 h-12 rounded-full bg-[#EEF0FF] text-[#4B5BEA] flex items-center justify-center mb-6 border border-[#DCE1FD]">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-[#111827] mb-3 tracking-tight">
-                Authentication Successful
-              </h2>
-              <p className="text-[#667085] text-base sm:text-lg mb-2 max-w-md">
-                Connected as <span className="font-semibold text-[#111827]">{userEmail || 'learner@noevis.ai'}</span>.
-              </p>
-              <p className="text-[#9CA3AF] text-sm mb-8 max-w-sm">
-                Next phase: Personalized learning space onboarding flow.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  info('NOEVIS AI Onboarding', 'Onboarding workspace setup will open in Phase 3.');
-                }}
-                className="h-[52px] px-8 rounded-full bg-[#111827] hover:bg-[#1F2937] text-white text-base font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm"
-              >
-                <span>Continue to Onboarding</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="text-xs text-[#9CA3AF] text-center">
-              NOEVIS AI • Learning Flow Stage 3 (Auth Complete)
-            </div>
-          </motion.div>
+          <OnboardingScreen
+            key="onboarding-screen"
+            initialData={onboardingData}
+            onComplete={handleOnboardingComplete}
+            onBackToAuth={() => setScreen('auth')}
+          />
+        )}
+
+        {screen === 'canvas' && (
+          <CanvasScreen
+            key="canvas-screen"
+            userEmail={userEmail}
+            onboardingData={onboardingData}
+            onResetOnboarding={handleResetOnboarding}
+          />
         )}
 
         {screen === 'splash' && (
@@ -94,4 +114,3 @@ export default function NoevisApp() {
     </div>
   );
 }
-
