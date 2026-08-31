@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-noevis-bg: #F7F8FA;
+  --color-noevis-surface: #FFFFFF;
+  --color-noevis-text: #111827;
+  --color-noevis-text-secondary: #667085;
+  --color-noevis-border: #E5E7EB;
+  --color-noevis-indigo: #4B5BEA;
+  --color-noevis-indigo-hover: #3E4DD4;
+  --color-noevis-indigo-soft: #EEF0FF;
+  --color-noevis-indigo-soft-hover: #E4E7FF;
+  --color-noevis-success: #16A34A;
+  --color-noevis-warning: #D97706;
+  --color-noevis-error: #DC2626;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    --bg-primary: #F7F8FA;
+    --surface: #FFFFFF;
+    --text-primary: #111827;
+    --text-secondary: #667085;
+    --border: #E5E7EB;
+    --indigo-primary: #4B5BEA;
+    --indigo-soft: #EEF0FF;
+  }
+
+  body {
+    background-color: #F7F8FA;
+    color: #111827;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
+  }
+
+  /* Focus ring style */
+  :focus-visible {
+    outline: 2px solid #4B5BEA;
+    outline-offset: 2px;
+  }
+}
+
