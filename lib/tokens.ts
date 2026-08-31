@@ -8,7 +8,7 @@
 export const tokens = {
   brand: {
     name: "NOEVIS AI",
-    tagline: "Intelligent Learning System",
+    tagline: "Understand. Practice. Master.",
   },
   colors: {
     // Canvas & Surfaces

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100" fill="none" stroke="#111827" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Pillar 1: Base foot + lowest loop -->
+  <path d="M 12 78 H 32 C 37 78 41 74 41 69 V 54 C 41 47 46 42 53 42 C 60 42 65 47 65 54 V 78" />
+  <!-- Pillar 2: Middle ascending step -->
+  <path d="M 65 50 C 65 38 72 30 81 30 C 90 30 97 38 97 50 V 78" />
+  <!-- Pillar 3: Tallest ascending step + base curve -->
+  <path d="M 97 28 C 97 16 105 10 115 10 C 125 10 132 16 132 28 V 68 C 132 74 127 78 121 78 H 106" />
+</svg>
