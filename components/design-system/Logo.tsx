@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 export interface LogoProps {
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'splash';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'splash' | 'welcome' | 'header';
   variant?: 'full' | 'mark' | 'stacked';
   showBadge?: boolean;
   className?: string;
@@ -19,7 +19,9 @@ export const Logo: React.FC<LogoProps> = ({
   // Configured dimensions with exact visual height ratios
   const sizeConfig = {
     xs: { width: 24, height: 18, textSize: 'text-xs', gap: 'gap-1.5', badgeSize: 'text-[9px] px-1 py-0.5' },
-    sm: { width: 32, height: 24, textSize: 'text-sm', gap: 'gap-2', badgeSize: 'text-[10px] px-1.5 py-0.5' },
+    sm: { width: 30, height: 22.5, textSize: 'text-[15px]', gap: 'gap-2', badgeSize: 'text-[10px] px-1.5 py-0.5' },
+    welcome: { width: 34, height: 25.5, textSize: 'text-[17px] sm:text-[18px]', gap: 'gap-2.5', badgeSize: 'text-xs px-2 py-0.5' },
+    header: { width: 32, height: 24, textSize: 'text-[17px] sm:text-[18px]', gap: 'gap-2.5', badgeSize: 'text-xs px-2 py-0.5' },
     md: { width: 44, height: 33, textSize: 'text-base', gap: 'gap-2.5', badgeSize: 'text-[11px] px-1.5 py-0.5' },
     lg: { width: 60, height: 45, textSize: 'text-xl', gap: 'gap-3', badgeSize: 'text-xs px-2 py-0.5' },
     xl: { width: 80, height: 60, textSize: 'text-2xl', gap: 'gap-3.5', badgeSize: 'text-xs px-2.5 py-1' },
@@ -125,7 +127,7 @@ export const Logo: React.FC<LogoProps> = ({
             sizeConfig.textSize
           )}
         >
-          NOEVIS
+          {showBadge ? 'NOEVIS' : 'NOEVIS AI'}
         </span>
         {showBadge && (
           <span
