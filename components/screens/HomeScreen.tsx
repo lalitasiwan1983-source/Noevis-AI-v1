@@ -442,7 +442,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   return (
     <div
       id="noevis-home-screen"
-      className="relative min-h-[100dvh] w-full bg-[#F7F8FA] text-[#111111] select-none overflow-x-hidden flex"
+      className="relative min-h-[100dvh] w-full bg-[#F7F8FA] text-[#111111] select-none overflow-x-hidden flex pb-20 lg:pb-0"
     >
       {/* Hidden native file input for direct upload */}
       <input
@@ -871,8 +871,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           isSidebarOpen ? 'lg:pl-[280px] lg:blur-[2px] lg:opacity-[0.88]' : 'lg:pl-[72px] lg:blur-0 lg:opacity-100'
         }`}
       >
-        {/* TOP HEADER AREA (NO full-width divider line across page) */}
-        <header className="w-full max-w-[1240px] mx-auto px-6 sm:px-10 lg:px-12 pt-6 pb-2 flex items-center justify-between shrink-0 z-20">
+        {/* DESKTOP TOP HEADER AREA (Visible ONLY on screens >= 1024px, completely UNCHANGED) */}
+        <header className="hidden lg:flex w-full max-w-[1240px] mx-auto px-6 sm:px-10 lg:px-12 pt-6 pb-2 items-center justify-between shrink-0 z-20">
           {/* Left: Mobile hamburger */}
           <div className="flex items-center gap-3">
             {/* Mobile hamburger button */}
@@ -925,10 +925,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </header>
 
+        {/* MOBILE TOP BAR (Screens < 1024px, pure minimal Noevis design) */}
+        <header className="lg:hidden w-full px-6 py-4 flex items-center justify-between shrink-0 bg-[#F7F8FA] border-b border-[#E5E7EB]/40 z-20">
+          {/* LEFT: Noevis brand / wordmark */}
+          <div className="cursor-pointer" onClick={() => handleNavClick('home')}>
+            <Logo size="sm" variant="full" showBadge={false} />
+          </div>
+
+          {/* RIGHT: Hamburger menu icon (44px min touch target) */}
+          <button
+            type="button"
+            onClick={() => setShowMobileDrawer(true)}
+            className="w-11 h-11 rounded-full flex items-center justify-center text-[#111111] hover:bg-[#F0F0F0] active:scale-[0.95] transition-all cursor-pointer"
+            style={{ minWidth: '44px', minHeight: '44px' }}
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5 stroke-[1.8] text-[#111111]" />
+          </button>
+        </header>
+
         {/* ================================================== */}
         {/* MAIN BODY AREA — HOME VIEW                         */}
         {/* ================================================== */}
-        <main className="w-full flex-1 flex flex-col items-center px-6 sm:px-10 lg:px-12 py-6 sm:py-8 my-auto">
+        <main className="w-full flex-1 flex flex-col items-center px-6 sm:px-10 lg:px-12 pt-4 sm:pt-8 pb-28 sm:pb-8 my-auto">
           {/* TAB: HOME VIEW */}
           {activeNav === 'home' && (
             <motion.div
@@ -938,18 +957,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               transition={transitionConfig}
               className="w-full max-w-[840px] flex flex-col items-start text-left"
             >
-              {/* 1. HERO SECTION (Spacious, deliberate desktop rhythm) */}
-              <div className="mt-8 sm:mt-12 lg:mt-14 mb-8 sm:mb-10 text-left">
+              {/* 1. HERO SECTION (Spacious, deliberate rhythm) */}
+              <div className="mt-4 sm:mt-12 lg:mt-14 mb-6 sm:mb-10 text-left">
                 <h1
                   id="home-hero-headline"
-                  className="text-[34px] sm:text-[44px] md:text-[50px] lg:text-[54px] font-bold text-[#111111] tracking-[-0.035em] leading-[1.08] mb-3"
+                  className="text-[30px] sm:text-[44px] md:text-[50px] lg:text-[54px] font-bold text-[#111111] tracking-[-0.035em] leading-[1.08] mb-2 sm:mb-3"
                 >
                   Ready when you are.
                 </h1>
 
                 <p
                   id="home-hero-subheading"
-                  className="text-[15.5px] sm:text-[17px] md:text-[18px] font-normal text-[#6B7280] tracking-[-0.01em] leading-[1.4]"
+                  className="text-[14.5px] sm:text-[17px] md:text-[18px] font-normal text-[#6B7280] tracking-[-0.01em] leading-[1.4]"
                 >
                   Start with something you’re learning.
                 </p>
@@ -959,26 +978,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <div
                 id="start-learning-card"
                 onClick={handleUniversalStartLearningClick}
-                className="group w-full min-h-[190px] sm:min-h-[200px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#D1D5DB] hover:bg-[#F7F7F7] rounded-[24px] p-7 sm:p-9 transition-all duration-200 ease-out cursor-pointer flex items-center justify-between text-left shadow-[0_2px_12px_rgba(0,0,0,0.02)] select-none"
+                className="group w-full min-h-[110px] sm:min-h-[200px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#D1D5DB] hover:bg-[#F7F7F7] rounded-[22px] sm:rounded-[24px] p-4 sm:p-9 transition-all duration-200 ease-out cursor-pointer flex items-center justify-between text-left shadow-[0_2px_12px_rgba(0,0,0,0.02)] select-none"
               >
-                {/* Left: Large subtle plus circle (88-104px diameter) */}
-                <div className="w-[88px] h-[88px] sm:w-[98px] sm:h-[98px] rounded-full border border-dashed border-[#CBD5E1] bg-white flex items-center justify-center shrink-0 transition-colors">
-                  <Plus className="w-8 h-8 text-[#111111] stroke-[1.6]" />
+                {/* Left: Large subtle plus circle */}
+                <div className="w-13 h-13 sm:w-[98px] sm:h-[98px] rounded-full border border-dashed border-[#CBD5E1] bg-white flex items-center justify-center shrink-0 transition-colors">
+                  <Plus className="w-5 h-5 sm:w-8 sm:h-8 text-[#111111] stroke-[1.8] sm:stroke-[1.6]" />
                 </div>
 
-                {/* Center: Title & Supporting Copy */}
-                <div className="flex-1 px-6 sm:px-8">
-                  <h2 className="text-[22px] sm:text-[26px] font-bold text-[#111111] tracking-[-0.025em] leading-tight mb-1.5">
+                {/* Center: Title & Supporting Copy (Generous horizontal width for clean 1-2 lines on mobile) */}
+                <div className="flex-1 px-4 sm:px-8 min-w-0">
+                  <h2 className="text-[18px] sm:text-[26px] font-bold text-[#111111] tracking-[-0.025em] leading-tight mb-1">
                     Start learning
                   </h2>
-                  <p className="text-[15px] sm:text-[16.5px] font-normal text-[#6B7280] leading-[1.4] tracking-[-0.01em]">
+                  <p className="text-[13.5px] sm:text-[16.5px] font-normal text-[#6B7280] leading-[1.35] tracking-[-0.01em] line-clamp-2">
                     Bring something you’re learning.
                   </p>
                 </div>
 
-                {/* Right: Circular outline with right arrow (52-60px) */}
-                <div className="w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full border border-[#E5E7EB] bg-white group-hover:border-[#CBD5E1] flex items-center justify-center shrink-0 text-[#111111] transition-colors">
-                  <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.8] group-hover:translate-x-1 transition-transform duration-200" />
+                {/* Right: Circular outline with right arrow */}
+                <div className="w-10 h-10 sm:w-[58px] sm:h-[58px] rounded-full border border-[#E5E7EB] bg-white group-hover:border-[#CBD5E1] flex items-center justify-center shrink-0 text-[#111111] transition-colors">
+                  <ArrowRight className="w-4 h-4 sm:w-6 sm:h-6 stroke-[1.8] group-hover:translate-x-1 transition-transform duration-200" />
                 </div>
               </div>
 
@@ -1365,49 +1384,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     ? '78vh'
                     : '72vh'
               }}
-              className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.06)] overflow-hidden text-left flex flex-col relative"
+              className="w-[92vw] sm:w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.06)] overflow-hidden text-left flex flex-col relative"
             >
               {/* Header block (Not shown if in success or analyzing states) */}
               {!isAnalyzing && !showSuccessState && (
                 <div className="px-6 md:px-8 pt-6 md:pt-7 pb-3 flex items-start justify-between gap-4 shrink-0">
                   <div>
                     <h3 className="text-xl md:text-2xl font-bold text-[#111111] tracking-[-0.02em] leading-tight">
-                      {activeSourceModal === 'all' || activeSourceModal === 'more'
-                        ? 'Choose a learning source'
-                        : activeSourceModal === 'upload'
-                        ? 'Upload File'
-                        : activeSourceModal === 'paste'
-                        ? 'Paste study notes or text'
-                        : activeSourceModal === 'link'
-                        ? 'Web Link'
-                        : activeSourceModal === 'youtube'
-                        ? 'YouTube Lecture'
-                        : activeSourceModal === 'camera'
-                        ? 'Scan / Photo'
-                        : activeSourceModal === 'voice'
-                        ? 'Voice Lecture'
-                        : activeSourceModal === 'record'
-                        ? 'Record Lecture'
-                        : 'Learning Source'}
+                      {activeSourceModal === 'all' || activeSourceModal === 'more' ? (
+                        <>
+                          <span className="sm:hidden">Choose a source</span>
+                          <span className="hidden sm:inline">Choose a learning source</span>
+                        </>
+                      ) : activeSourceModal === 'upload' ? (
+                        'Upload File'
+                      ) : activeSourceModal === 'paste' ? (
+                        'Paste study notes or text'
+                      ) : activeSourceModal === 'link' ? (
+                        'Web Link'
+                      ) : activeSourceModal === 'youtube' ? (
+                        'YouTube Lecture'
+                      ) : activeSourceModal === 'camera' ? (
+                        'Scan / Photo'
+                      ) : activeSourceModal === 'voice' ? (
+                        'Voice Lecture'
+                      ) : activeSourceModal === 'record' ? (
+                        'Record Lecture'
+                      ) : (
+                        'Learning Source'
+                      )}
                     </h3>
                     <p className="text-xs md:text-[13px] text-[#6B7280] mt-1 leading-normal">
-                      {activeSourceModal === 'all' || activeSourceModal === 'more'
-                        ? 'Noevis will analyze your material and generate an adaptive Canvas.'
-                        : activeSourceModal === 'upload'
-                        ? 'Select or drag study materials to start learning.'
-                        : activeSourceModal === 'paste'
-                        ? 'Bring your study excerpts, transcripts, or notes.'
-                        : activeSourceModal === 'link'
-                        ? 'Add website articles, web links, or learning resources.'
-                        : activeSourceModal === 'youtube'
-                        ? 'Turn a lecture into an adaptive Canvas.'
-                        : activeSourceModal === 'camera'
-                        ? 'Capture notes, pages or whiteboards.'
-                        : activeSourceModal === 'voice'
-                        ? 'Audio transcription and key concepts.'
-                        : activeSourceModal === 'record'
-                        ? 'Capture and transcribe spoken lectures or browser audio.'
-                        : 'Noevis will process and create your adaptive Workspace.'}
+                      {activeSourceModal === 'all' || activeSourceModal === 'more' ? (
+                        <>
+                          <span className="sm:hidden">Add something to learn.</span>
+                          <span className="hidden sm:inline">Noevis will analyze your material and generate an adaptive Canvas.</span>
+                        </>
+                      ) : activeSourceModal === 'upload' ? (
+                        'Select or drag study materials to start learning.'
+                      ) : activeSourceModal === 'paste' ? (
+                        'Bring your study excerpts, transcripts, or notes.'
+                      ) : activeSourceModal === 'link' ? (
+                        'Add website articles, web links, or learning resources.'
+                      ) : activeSourceModal === 'youtube' ? (
+                        'Turn a lecture into an adaptive Canvas.'
+                      ) : activeSourceModal === 'camera' ? (
+                        'Capture notes, pages or whiteboards.'
+                      ) : activeSourceModal === 'voice' ? (
+                        'Audio transcription and key concepts.'
+                      ) : activeSourceModal === 'record' ? (
+                        'Capture and transcribe spoken lectures or browser audio.'
+                      ) : (
+                        'Noevis will process and create your adaptive Workspace.'
+                      )}
                     </p>
                   </div>
 
@@ -1501,7 +1530,95 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {/* 3. SELECTION GRID STATE (ALL / MORE) */}
                 {!isAnalyzing && !showSuccessState && (activeSourceModal === 'all' || activeSourceModal === 'more') && (
                   <div className="flex flex-col gap-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* MOBILE-ONLY COMPACT 2-COLUMN GRID (EXACTLY 6 SOURCES: Upload, Text, Link, YouTube, Photo, Record) */}
+                    <div className="grid grid-cols-2 gap-2.5 sm:hidden py-1">
+                      {/* 1. Upload */}
+                      <button
+                        type="button"
+                        onClick={handleDirectUploadClick}
+                        className="p-3.5 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.97] transition-all flex flex-col items-center justify-center text-center gap-2 cursor-pointer group min-h-[84px]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <FileUp className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <span className="text-[13.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                          Upload
+                        </span>
+                      </button>
+
+                      {/* 2. Text */}
+                      <button
+                        type="button"
+                        onClick={() => setActiveSourceModal('paste')}
+                        className="p-3.5 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.97] transition-all flex flex-col items-center justify-center text-center gap-2 cursor-pointer group min-h-[84px]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Clipboard className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <span className="text-[13.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                          Text
+                        </span>
+                      </button>
+
+                      {/* 3. Link */}
+                      <button
+                        type="button"
+                        onClick={() => setActiveSourceModal('link')}
+                        className="p-3.5 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.97] transition-all flex flex-col items-center justify-center text-center gap-2 cursor-pointer group min-h-[84px]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <LinkIcon className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <span className="text-[13.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                          Link
+                        </span>
+                      </button>
+
+                      {/* 4. YouTube */}
+                      <button
+                        type="button"
+                        onClick={() => setActiveSourceModal('youtube')}
+                        className="p-3.5 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.97] transition-all flex flex-col items-center justify-center text-center gap-2 cursor-pointer group min-h-[84px]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Youtube className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <span className="text-[13.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                          YouTube
+                        </span>
+                      </button>
+
+                      {/* 5. Photo */}
+                      <button
+                        type="button"
+                        onClick={() => setActiveSourceModal('camera')}
+                        className="p-3.5 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.97] transition-all flex flex-col items-center justify-center text-center gap-2 cursor-pointer group min-h-[84px]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Camera className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <span className="text-[13.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                          Photo
+                        </span>
+                      </button>
+
+                      {/* 6. Record */}
+                      <button
+                        type="button"
+                        onClick={() => setActiveSourceModal('record')}
+                        className="p-3.5 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.97] transition-all flex flex-col items-center justify-center text-center gap-2 cursor-pointer group min-h-[84px]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Monitor className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <span className="text-[13.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                          Record
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* DESKTOP-ONLY 8-CARD RICH GRID (>= sm: LOCKED & UNCHANGED) */}
+                    <div className="hidden sm:grid sm:grid-cols-2 gap-2.5">
                       
                       {/* CARD 1: Upload File */}
                       <button
@@ -2060,182 +2177,116 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowMobileDrawer(false)}
-              className="fixed inset-0 bg-black/10 backdrop-blur-[8px] z-40 lg:hidden"
+              className="fixed inset-0 bg-[#0F1216]/32 backdrop-blur-[10px] z-40 lg:hidden"
             />
 
-            {/* Premium Mobile Drawer (300px, rounded-r-[20px]) */}
+            {/* Premium Mobile Drawer (Opens from RIGHT, max-width 340px, rounded-l-[24px]) */}
             <motion.div
-              initial={{ x: '-100%' }}
+              initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-y-0 left-0 w-[300px] bg-[#FFFFFF] border-r border-[#E5E7EB] rounded-r-[20px] z-50 p-5 flex flex-col justify-between lg:hidden shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-y-0 right-0 w-[85vw] max-w-[340px] bg-[#FFFFFF] border-l border-[#E5E7EB] rounded-l-[24px] z-50 p-6 flex flex-col justify-between lg:hidden shadow-[-8px_0_30px_rgba(0,0,0,0.06)]"
             >
               <div className="flex flex-col h-full w-full justify-between overflow-hidden">
-                {/* Top Section */}
-                <div className="flex flex-col gap-5 w-full shrink-0">
-                  {/* Header */}
-                  <div className="flex items-center justify-between pt-1 pb-3 border-b border-[#E5E7EB]">
-                    <Logo size="sm" variant="full" showBadge={false} />
+                {/* Header Section */}
+                <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB] shrink-0">
+                  <span className="text-lg font-bold text-[#111111] tracking-[-0.03em] select-none">Noevis</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileDrawer(false)}
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-[#9CA3AF] hover:text-[#111111] hover:bg-[#F5F5F5] transition-all cursor-pointer"
+                    style={{ minWidth: '44px', minHeight: '44px' }}
+                    aria-label="Close menu"
+                  >
+                    <X className="w-5 h-5 stroke-[2]" />
+                  </button>
+                </div>
+
+                {/* Navigation Links List (Scrollable, clean top-to-bottom hierarchy) */}
+                <div className="flex-1 overflow-y-auto py-5 flex flex-col gap-5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                  
+                  {/* SECONDARY UTILITIES */}
+                  <div className="flex flex-col gap-1.5">
                     <button
                       type="button"
-                      onClick={() => setShowMobileDrawer(false)}
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
-                      aria-label="Close sidebar"
+                      onClick={() => handleNavClick('library')}
+                      className={`w-full h-12 px-3.5 rounded-[12px] flex items-center gap-3.5 text-sm transition-all duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                        activeNav === 'library'
+                          ? 'bg-[#F1F1F1] text-[#111111] font-bold shadow-sm'
+                          : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                      }`}
+                      style={{ minHeight: '48px' }}
                     >
-                      <X className="w-5 h-5 stroke-[2] text-[#111111]" />
+                      <LayoutGrid className="w-[20px] h-[20px] stroke-[1.8]" />
+                      <span>Library</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNavClick('history')}
+                      className={`w-full h-12 px-3.5 rounded-[12px] flex items-center gap-3.5 text-sm transition-all duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                        activeNav === 'history'
+                          ? 'bg-[#F1F1F1] text-[#111111] font-bold shadow-sm'
+                          : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                      }`}
+                      style={{ minHeight: '48px' }}
+                    >
+                      <ArrowUpRight className="w-[20px] h-[20px] stroke-[1.8]" />
+                      <span>Activity</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNavClick('history')}
+                      className="w-full h-12 px-3.5 rounded-[12px] flex items-center gap-3.5 text-sm text-[#111111] hover:bg-[#F5F5F5] font-medium transition-all duration-150 cursor-pointer text-left focus-visible:outline-none"
+                      style={{ minHeight: '48px' }}
+                    >
+                      <Clock className="w-[20px] h-[20px] stroke-[1.8] text-[#6B7280]" />
+                      <span>Recent</span>
                     </button>
                   </div>
 
-                  {/* Primary Action Button: + Start learning */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMobileDrawer(false);
-                      handleUniversalStartLearningClick();
-                    }}
-                    className="w-full h-[50px] px-4 bg-[#FFFFFF] hover:bg-[#F5F5F5] active:bg-[#EFEFEF] border border-[#E5E7EB] rounded-[12px] text-[15px] font-semibold text-[#111111] flex items-center gap-3 transition-colors cursor-pointer focus-visible:outline-none"
-                  >
-                    <Plus className="w-[20px] h-[20px] stroke-[2.2] text-[#111111]" />
-                    <span>Start learning</span>
-                  </button>
+                  <hr className="border-[#E5E7EB]" />
 
-                  {/* Primary Navigation */}
-                  <nav aria-label="Mobile Navigation" className="flex flex-col gap-1">
-                    {mainNavItems.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = activeNav === item.id;
-
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleNavClick(item.id)}
-                          className={`w-full h-[46px] px-4 rounded-[12px] flex items-center gap-3 text-[15.5px] transition-colors duration-150 cursor-pointer text-left focus-visible:outline-none ${
-                            isActive
-                              ? 'bg-[#F1F1F1] text-[#111111] font-semibold'
-                              : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
-                          }`}
-                        >
-                          <Icon className="w-[20px] h-[20px] stroke-[1.8] text-[#111111]" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </nav>
+                  {/* SYSTEM SECTION */}
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleNavClick('settings')}
+                      className={`w-full h-12 px-3.5 rounded-[12px] flex items-center gap-3.5 text-sm transition-all duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                        activeNav === 'settings'
+                          ? 'bg-[#F1F1F1] text-[#111111] font-bold shadow-sm'
+                          : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                      }`}
+                      style={{ minHeight: '48px' }}
+                    >
+                      <Settings className="w-[20px] h-[20px] stroke-[1.8]" />
+                      <span>Settings</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNavClick('help')}
+                      className={`w-full h-12 px-3.5 rounded-[12px] flex items-center gap-3.5 text-sm transition-all duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                        activeNav === 'help'
+                          ? 'bg-[#F1F1F1] text-[#111111] font-bold shadow-sm'
+                          : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                      }`}
+                      style={{ minHeight: '48px' }}
+                    >
+                      <HelpCircle className="w-[20px] h-[20px] stroke-[1.8]" />
+                      <span>Help</span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* Middle Scroll Section (Dynamic Content) */}
-                <div className="flex-1 overflow-y-auto my-3 pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-                  {canvases.length > 0 && (
-                    <div className="flex flex-col gap-5">
-                      {/* Recent List */}
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#6B7280] tracking-wider uppercase">
-                          <span>Recent</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowMobileDrawer(false);
-                              setActiveNav('history');
-                            }}
-                            className="hover:underline text-[11px] normal-case font-medium text-[#111111] cursor-pointer"
-                          >
-                            View all
-                          </button>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          {canvases.slice(0, 4).map((canvas) => (
-                            <button
-                              key={`mob-recent-${canvas.id}`}
-                              type="button"
-                              onClick={() => {
-                                setShowMobileDrawer(false);
-                                onStartCanvas(canvas.sourceType);
-                              }}
-                              className="w-full h-[38px] px-3 rounded-[10px] hover:bg-[#F5F5F5] transition-colors flex items-center gap-2.5 text-[14px] text-left text-[#111111] font-medium truncate cursor-pointer"
-                            >
-                              <Clock className="w-4 h-4 text-[#6B7280] shrink-0" />
-                              <span className="truncate flex-1">{canvas.title}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Canvases List */}
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#6B7280] tracking-wider uppercase">
-                          <span>Canvases</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowMobileDrawer(false);
-                              setActiveNav('canvases');
-                            }}
-                            className="hover:underline text-[11px] normal-case font-medium text-[#111111] cursor-pointer"
-                          >
-                            View all
-                          </button>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          {canvases.map((canvas) => (
-                            <div
-                              key={`mob-canvas-${canvas.id}`}
-                              className="w-full h-[38px] px-3 rounded-[10px] hover:bg-[#F5F5F5] transition-colors flex items-center justify-between gap-2 text-[14px] text-[#111111] font-medium group relative"
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowMobileDrawer(false);
-                                  onStartCanvas(canvas.sourceType);
-                                }}
-                                className="flex-1 flex items-center gap-2.5 text-left truncate cursor-pointer h-full"
-                              >
-                                <Diamond className="w-3.5 h-3.5 text-[#111111] shrink-0" />
-                                <span className="truncate">{canvas.title}</span>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Bottom Section */}
-                <div className="flex flex-col gap-4 pt-3 border-t border-[#E5E7EB] shrink-0">
-                  {/* System Navigation */}
-                  <nav aria-label="Mobile System Navigation" className="flex flex-col gap-1">
-                    {systemNavItems.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = activeNav === item.id;
-
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleNavClick(item.id)}
-                          className={`w-full h-[44px] px-4 rounded-[12px] flex items-center gap-3 text-[15.5px] transition-colors duration-150 cursor-pointer text-left focus-visible:outline-none ${
-                            isActive
-                              ? 'bg-[#F1F1F1] text-[#111111] font-semibold'
-                              : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
-                          }`}
-                        >
-                          <Icon className="w-[20px] h-[20px] stroke-[1.8] text-[#111111]" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </nav>
-
-                  {/* Profile Block */}
-                  <div className="flex items-center gap-3 p-2.5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[14px]">
-                    <div className="w-9 h-9 rounded-full bg-[#111111] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                {/* BOTTOM ACCOUNT SECTION */}
+                <div className="pt-4 border-t border-[#E5E7EB] shrink-0 mt-auto">
+                  <div className="flex items-center gap-3 p-3 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[14px]">
+                    <div className="w-10 h-10 rounded-full bg-[#111111] text-white text-[13px] font-bold flex items-center justify-center shrink-0">
                       {userInitials}
                     </div>
-                    <div className="truncate text-left">
-                      <p className="text-xs font-semibold text-[#111111] truncate">{userName}</p>
-                      <p className="text-[11px] text-[#6B7280] truncate">{userEmail}</p>
+                    <div className="truncate text-left flex-1">
+                      <p className="text-[13.5px] font-bold text-[#111111] truncate">{userName}</p>
+                      <p className="text-[11.5px] text-[#6B7280] truncate">{userEmail}</p>
                     </div>
                   </div>
                 </div>
@@ -2244,6 +2295,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </>
         )}
       </AnimatePresence>
+
+      {/* ================================================== */}
+      {/* 5. MOBILE FIXED BOTTOM NAVIGATION BAR             */}
+      {/* ================================================== */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#FFFFFF] border-t border-[#E5E7EB] z-30 shadow-[0_-4px_24px_rgba(0,0,0,0.03)] pb-[max(12px,env(safe-area-inset-bottom))]">
+        <div className="flex items-center justify-around h-16 max-w-md mx-auto px-6">
+          {/* LEFT ACTION: Start */}
+          <button
+            type="button"
+            onClick={() => handleNavClick('home')}
+            className={`flex flex-col items-center justify-center gap-1 w-16 h-12 rounded-xl transition-all duration-150 cursor-pointer ${
+              activeNav === 'home' ? 'text-[#111111]' : 'text-[#6B7280]'
+            }`}
+          >
+            <Sparkle className={`w-5 h-5 ${activeNav === 'home' ? 'fill-current stroke-[2]' : 'stroke-[1.8]'}`} />
+            <span className={`text-[10.5px] font-bold tracking-tight ${activeNav === 'home' ? 'text-[#111111]' : 'text-[#6B7280]'}`}>
+              Start
+            </span>
+          </button>
+
+          {/* CENTER PRIMARY ACTION: Large circular + (Add Source / Create Canvas) */}
+          <button
+            type="button"
+            onClick={handleUniversalStartLearningClick}
+            className="flex items-center justify-center w-[52px] h-[52px] -mt-4 rounded-full bg-[#111111] hover:bg-[#222222] active:scale-[0.92] text-white shadow-[0_4px_16px_rgba(0,0,0,0.18)] border-4 border-[#FFFFFF] transition-all cursor-pointer shrink-0"
+            aria-label="Start Learning / Add Source"
+          >
+            <Plus className="w-6 h-6 stroke-[2.5]" />
+          </button>
+
+          {/* RIGHT ACTION: Canvas */}
+          <button
+            type="button"
+            onClick={() => handleNavClick('canvases')}
+            className={`flex flex-col items-center justify-center gap-1 w-16 h-12 rounded-xl transition-all duration-150 cursor-pointer ${
+              activeNav === 'canvases' ? 'text-[#111111]' : 'text-[#6B7280]'
+            }`}
+          >
+            <Diamond className={`w-[19px] h-[19px] ${activeNav === 'canvases' ? 'fill-current stroke-[2]' : 'stroke-[1.8]'}`} />
+            <span className={`text-[10.5px] font-bold tracking-tight ${activeNav === 'canvases' ? 'text-[#111111]' : 'text-[#6B7280]'}`}>
+              Canvas
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
