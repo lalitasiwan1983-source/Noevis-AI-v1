@@ -5,6 +5,9 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Logo } from '@/components/design-system/Logo';
 import { useToast } from '@/components/design-system/Toast';
 import { OnboardingData } from './OnboardingScreen';
+import { MyDesksScreen } from './MyDesksScreen';
+import { CreateDeskScreen } from './CreateDeskScreen';
+import { LibraryScreen } from './LibraryScreen';
 import {
   Sparkle,
   Diamond,
@@ -48,6 +51,7 @@ interface HomeScreenProps {
   onboardingData?: Partial<OnboardingData>;
   onStartCanvas: (sourceType?: string) => void;
   onResetOnboarding?: () => void;
+  initialNav?: NavItemType;
 }
 
 type NavItemType = 'home' | 'canvases' | 'library' | 'history' | 'settings' | 'help';
@@ -56,9 +60,11 @@ type SourceModalType = 'all' | 'upload' | 'paste' | 'link' | 'youtube' | 'camera
 interface CanvasItem {
   id: string;
   title: string;
-  sourceType: 'pdf' | 'text' | 'link' | 'youtube' | 'voice';
+  sourceType: string;
   sourceName: string;
   updatedAt: string;
+  itemCount?: number;
+  lastStudied?: string;
   elementsCount: {
     explanations: number;
     questions: number;
@@ -173,12 +179,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onboardingData,
   onStartCanvas,
   onResetOnboarding,
+  initialNav = 'home',
 }) => {
   const shouldReduceMotion = useReducedMotion();
   const { success, info } = useToast();
 
   // Navigation State (Exact 6 destinations)
-  const [activeNav, setActiveNav] = useState<NavItemType>('home');
+  const [activeNav, setActiveNav] = useState<NavItemType>(initialNav);
 
   // Sidebar Open / Collapsed State (Desktop)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -207,6 +214,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Canvases State (Starts clean and empty for new user)
   const [canvases, setCanvases] = useState<CanvasItem[]>([]);
+  const [isCreatingDesk, setIsCreatingDesk] = useState<boolean>(false);
 
   // Refs
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -296,6 +304,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const handleNavClick = (navItem: NavItemType) => {
     setActiveNav(navItem);
+    if (navItem !== 'canvases') {
+      setIsCreatingDesk(false);
+    }
     setShowMobileDrawer(false);
   };
 
@@ -1147,100 +1158,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </motion.div>
           )}
 
-          {/* TAB: MY CANVASES */}
-          {activeNav === 'canvases' && (
-            <motion.div
-              key="canvases-tab-content"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={transitionConfig}
-              className="w-full max-w-[840px] flex flex-col text-left"
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB] mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-[#111111]">My Desks</h1>
-                  <p className="text-sm text-[#6B7280] mt-0.5">Your generated learning workspaces</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleUniversalStartLearningClick}
-                  className="h-10 px-4 rounded-[12px] bg-[#FFFFFF] border border-[#E5E7EB] hover:bg-[#F5F5F5] text-xs sm:text-sm font-semibold text-[#111111] flex items-center gap-2 cursor-pointer transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>New Desk</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Premium Dashed Creation Card */}
-                <div
-                  onClick={handleUniversalStartLearningClick}
-                  className="p-5 min-h-[160px] rounded-[20px] bg-[#FFFFFF] border border-dashed border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9F9] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group"
-                >
-                  <Plus className="w-5 h-5 text-[#6B7280] group-hover:text-[#111111] group-hover:scale-110 transition-transform stroke-[2] mb-3" />
-                  <h4 className="text-[15px] font-bold text-[#111111] mb-1">New Desk</h4>
-                  <p className="text-xs text-[#6B7280]">Create your first learning Desk</p>
-                </div>
-
-                {canvases.map((canvas) => (
-                  <div
-                    key={canvas.id}
-                    onClick={() => onStartCanvas(canvas.sourceType)}
-                    className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB] hover:bg-[#F7F7F7] transition-all cursor-pointer flex flex-col justify-between group"
-                  >
-                    <div>
-                      <span className="text-[11px] font-semibold text-[#6B7280] bg-[#F1F1F1] px-2.5 py-0.5 rounded-full">
-                        {canvas.sourceType}
-                      </span>
-                      <h4 className="text-base font-bold text-[#111111] mt-2 mb-1">{canvas.title}</h4>
-                      <p className="text-xs text-[#6B7280]">{canvas.sourceName}</p>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#6B7280]">
-                      <span>{canvas.elementsCount.explanations} Explanations</span>
-                      <span className="font-semibold text-[#111111] flex items-center gap-1">Open Desk →</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+          {/* TAB: MY DESKS */}
+          {activeNav === 'canvases' &&
+            (isCreatingDesk ? (
+              <CreateDeskScreen
+                onBack={() => setIsCreatingDesk(false)}
+                onCreate={({ title, iconKey }) => {
+                  const newDesk: CanvasItem = {
+                    id: `desk-${Date.now()}`,
+                    title: title,
+                    sourceType: iconKey || 'study',
+                    sourceName: `${title} Desk`,
+                    updatedAt: 'Just now',
+                    itemCount: 0,
+                    lastStudied: 'Just now',
+                    elementsCount: { explanations: 1, questions: 0, visuals: 0 },
+                  };
+                  setCanvases((prev) => [newDesk, ...prev]);
+                  setIsCreatingDesk(false);
+                  success('Desk created', `"${title}" workspace is ready.`);
+                  onStartCanvas(iconKey || 'study');
+                }}
+              />
+            ) : (
+              <MyDesksScreen
+                desks={canvases}
+                onCreateDesk={() => setIsCreatingDesk(true)}
+                onOpenDesk={(sourceType) => onStartCanvas(sourceType)}
+                onDeleteDesk={(id) => {
+                  setCanvases((prev) => prev.filter((c) => c.id !== id));
+                  success('Desk deleted', 'Learning workspace has been removed.');
+                }}
+                onRenameDesk={(id, newTitle) => {
+                  setCanvases((prev) =>
+                    prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c))
+                  );
+                  success('Desk renamed', `Workspace title updated to "${newTitle}"`);
+                }}
+              />
+            ))}
 
           {/* TAB: LIBRARY */}
           {activeNav === 'library' && (
-            <motion.div
-              key="library-tab-content"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={transitionConfig}
-              className="w-full max-w-[840px] flex flex-col text-left"
-            >
-              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
-                <h1 className="text-2xl font-bold text-[#111111]">Library</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Saved study cards, flashcard decks, and summaries</p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
-                  <BookOpen className="w-5 h-5 text-[#111111] mb-3 stroke-[1.8]" />
-                  <h3 className="text-sm font-bold text-[#111111]">Structured Notes</h3>
-                  <p className="text-xs text-[#6B7280] mt-1">Organized conceptual summaries</p>
-                  <span className="inline-block mt-3 text-[11px] font-medium text-[#9CA3AF]">0 Saved</span>
-                </div>
-                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
-                  <Layers className="w-5 h-5 text-[#111111] mb-3 stroke-[1.8]" />
-                  <h3 className="text-sm font-bold text-[#111111]">Flashcard Decks</h3>
-                  <p className="text-xs text-[#6B7280] mt-1">Recall and quiz sets</p>
-                  <span className="inline-block mt-3 text-[11px] font-medium text-[#9CA3AF]">0 Decks</span>
-                </div>
-                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
-                  <Bookmark className="w-5 h-5 text-[#111111] mb-3 stroke-[1.8]" />
-                  <h3 className="text-sm font-bold text-[#111111]">Key Formulas</h3>
-                  <p className="text-xs text-[#6B7280] mt-1">Extracted rules and theorems</p>
-                  <span className="inline-block mt-3 text-[11px] font-medium text-[#9CA3AF]">0 Items</span>
-                </div>
-              </div>
-            </motion.div>
+            <LibraryScreen
+              onStartLearning={handleUniversalStartLearningClick}
+              desks={canvases}
+            />
           )}
 
           {/* TAB: HISTORY */}

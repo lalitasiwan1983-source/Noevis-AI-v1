@@ -4,3 +4,6 @@ export { AuthScreen } from './AuthScreen';
 export { OnboardingScreen } from './OnboardingScreen';
 export { HomeScreen } from './HomeScreen';
 export { CanvasScreen } from './CanvasScreen';
+export { MyDesksScreen } from './MyDesksScreen';
+export { CreateDeskScreen } from './CreateDeskScreen';
+export { LibraryScreen } from './LibraryScreen';
