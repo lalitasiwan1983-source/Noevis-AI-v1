@@ -284,7 +284,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Navigation items definition (Exact 6 destinations)
   const mainNavItems = [
     { id: 'home' as NavItemType, label: 'Start', icon: Sparkle },
-    { id: 'canvases' as NavItemType, label: 'Canvases', icon: Diamond },
+    { id: 'canvases' as NavItemType, label: 'Desks', icon: Diamond },
     { id: 'library' as NavItemType, label: 'Library', icon: LayoutGrid },
     { id: 'history' as NavItemType, label: 'Activity', icon: ArrowUpRight },
   ];
@@ -426,7 +426,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     };
     setCanvases((prev) => [newCanvas, ...prev]);
 
-    success('Source Prepared', 'Launching your adaptive Canvas workspace...');
+    success('Source Prepared', 'Launching your adaptive Desk workspace...');
     onStartCanvas(type);
   };
 
@@ -560,7 +560,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   {/* Canvases List */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#6B7280] tracking-wider uppercase">
-                      <span>Canvases</span>
+                      <span>Desks</span>
                       <button
                         type="button"
                         onClick={() => setActiveNav('canvases')}
@@ -588,13 +588,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             canvas={canvas}
                             onDelete={() => {
                               setCanvases((prev) => prev.filter((c) => c.id !== canvas.id));
-                              success('Canvas deleted', 'Learning workspace has been removed.');
+                              success('Desk deleted', 'Learning workspace has been removed.');
                             }}
                             onRename={(newTitle) => {
                               setCanvases((prev) =>
                                 prev.map((c) => (c.id === canvas.id ? { ...c, title: newTitle } : c))
                               );
-                              success('Canvas renamed', `Workspace title updated to "${newTitle}"`);
+                              success('Desk renamed', `Workspace title updated to "${newTitle}"`);
                             }}
                           />
                         </div>
@@ -1081,7 +1081,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {/* Section Header */}
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-[20px] sm:text-[22px] font-bold text-[#111111] tracking-[-0.02em]">
-                    My Canvases
+                    My Desks
                   </h3>
 
                   <button
@@ -1101,8 +1101,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     className="p-5 min-h-[160px] rounded-[20px] bg-[#FFFFFF] border border-dashed border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9F9] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group"
                   >
                     <Plus className="w-5 h-5 text-[#6B7280] group-hover:text-[#111111] group-hover:scale-110 transition-transform stroke-[2] mb-3" />
-                    <h4 className="text-[15px] font-bold text-[#111111] mb-1">New Canvas</h4>
-                    <p className="text-xs text-[#6B7280]">Create your first learning Canvas</p>
+                    <h4 className="text-[15px] font-bold text-[#111111] mb-1">New Desk</h4>
+                    <p className="text-xs text-[#6B7280]">Create your first learning Desk</p>
                   </div>
 
                   {canvases.map((canvas) => (
@@ -1158,7 +1158,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             >
               <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB] mb-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-[#111111]">My Canvases</h1>
+                  <h1 className="text-2xl font-bold text-[#111111]">My Desks</h1>
                   <p className="text-sm text-[#6B7280] mt-0.5">Your generated learning workspaces</p>
                 </div>
 
@@ -1168,7 +1168,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   className="h-10 px-4 rounded-[12px] bg-[#FFFFFF] border border-[#E5E7EB] hover:bg-[#F5F5F5] text-xs sm:text-sm font-semibold text-[#111111] flex items-center gap-2 cursor-pointer transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>New Canvas</span>
+                  <span>New Desk</span>
                 </button>
               </div>
 
@@ -1179,8 +1179,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   className="p-5 min-h-[160px] rounded-[20px] bg-[#FFFFFF] border border-dashed border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9F9] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group"
                 >
                   <Plus className="w-5 h-5 text-[#6B7280] group-hover:text-[#111111] group-hover:scale-110 transition-transform stroke-[2] mb-3" />
-                  <h4 className="text-[15px] font-bold text-[#111111] mb-1">New Canvas</h4>
-                  <p className="text-xs text-[#6B7280]">Create your first learning Canvas</p>
+                  <h4 className="text-[15px] font-bold text-[#111111] mb-1">New Desk</h4>
+                  <p className="text-xs text-[#6B7280]">Create your first learning Desk</p>
                 </div>
 
                 {canvases.map((canvas) => (
@@ -1198,7 +1198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </div>
                     <div className="mt-4 pt-3 border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#6B7280]">
                       <span>{canvas.elementsCount.explanations} Explanations</span>
-                      <span className="font-semibold text-[#111111] flex items-center gap-1">Open Canvas →</span>
+                      <span className="font-semibold text-[#111111] flex items-center gap-1">Open Desk →</span>
                     </div>
                   </div>
                 ))}
@@ -1261,7 +1261,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Clock className="w-8 h-8 text-[#9CA3AF] mb-2 stroke-[1.5]" />
                 <h3 className="text-sm font-semibold text-[#111111]">No session history yet</h3>
                 <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
-                  As you interact with learning canvases and practice quiz questions, your history will be recorded here.
+                  As you interact with learning desks and practice quiz questions, your history will be recorded here.
                 </p>
               </div>
             </motion.div>
@@ -1330,7 +1330,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
               <div className="flex flex-col gap-3">
                 <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
-                  <h3 className="text-sm font-bold text-[#111111] mb-1">How does the Canvas work?</h3>
+                  <h3 className="text-sm font-bold text-[#111111] mb-1">How does the Desk work?</h3>
                   <p className="text-xs text-[#6B7280] leading-relaxed">
                     When you bring a document, video, or pasted text, Noevis extracts core learning concepts, builds step-by-step explanations, creates interactive quizzes, and generates visual diagrams.
                   </p>
@@ -1418,7 +1418,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       {activeSourceModal === 'all' || activeSourceModal === 'more' ? (
                         <>
                           <span className="sm:hidden">Add something to learn.</span>
-                          <span className="hidden sm:inline">Noevis will analyze your material and generate an adaptive Canvas.</span>
+                          <span className="hidden sm:inline">Noevis will analyze your material and generate an adaptive Desk.</span>
                         </>
                       ) : activeSourceModal === 'upload' ? (
                         'Select or drag study materials to start learning.'
@@ -1427,7 +1427,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       ) : activeSourceModal === 'link' ? (
                         'Add website articles, web links, or learning resources.'
                       ) : activeSourceModal === 'youtube' ? (
-                        'Turn a lecture into an adaptive Canvas.'
+                        'Turn a lecture into an adaptive Desk.'
                       ) : activeSourceModal === 'camera' ? (
                         'Capture notes, pages or whiteboards.'
                       ) : activeSourceModal === 'voice' ? (
@@ -1470,7 +1470,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       {analysisProgress < 50
                         ? 'Extracting core learning concepts and outlines...'
                         : analysisProgress < 90
-                        ? 'Building your adaptive Canvas explanations and quizzes...'
+                        ? 'Building your adaptive Desk explanations and quizzes...'
                         : 'Finalizing your cognitive study environment...'}
                     </p>
 
@@ -1496,7 +1496,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </div>
 
                     <h4 className="text-lg md:text-xl font-bold text-[#111111] mb-1.5 tracking-tight">
-                      Canvas ready
+                      Desk ready
                     </h4>
                     
                     <p className="text-xs text-[#6B7280] mb-4 leading-relaxed">
@@ -1521,7 +1521,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       onClick={handleFinalLaunch}
                       className="w-full h-10 rounded-[11px] bg-[#111111] hover:bg-[#222222] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.985] transition-all cursor-pointer"
                     >
-                      <span>Open Canvas</span>
+                      <span>Open Desk</span>
                       <ArrowRight className="w-4 h-4 stroke-[2]" />
                     </button>
                   </div>
@@ -1699,7 +1699,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             YouTube Lecture
                           </h4>
                           <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
-                            Turn a lecture into an adaptive Canvas
+                            Turn a lecture into an adaptive Desk
                           </p>
                         </div>
                       </button>
@@ -1863,7 +1863,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         onClick={() => handleAnalyzeAndLaunch('upload')}
                         className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
                       >
-                        Analyze & Create Canvas
+                        Analyze & Create Desk
                       </button>
                     </div>
                   </div>
@@ -1917,7 +1917,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         onClick={() => handleAnalyzeAndLaunch('paste', 'Pasted Text Notes')}
                         className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
                       >
-                        Create Canvas
+                        Create Desk
                       </button>
                     </div>
                   </div>
@@ -1947,7 +1947,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     )}
 
                     <p className="text-xs text-[#6B7280] leading-normal px-1">
-                      Noevis extracts content, key sections, citations, and builds your interactive canvas.
+                      Noevis extracts content, key sections, citations, and builds your interactive desk.
                     </p>
 
                     {/* Action Bar */}
@@ -2019,7 +2019,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         onClick={() => handleAnalyzeAndLaunch('youtube', 'YouTube Lecture Workspace')}
                         className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
                       >
-                        Create Canvas
+                        Create Desk
                       </button>
                     </div>
                   </div>
@@ -2052,10 +2052,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => handleAnalyzeAndLaunch('camera', 'Snapshot OCR Canvas')}
+                        onClick={() => handleAnalyzeAndLaunch('camera', 'Snapshot OCR Desk')}
                         className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
                       >
-                        Create Canvas
+                        Create Desk
                       </button>
                     </div>
                   </div>
@@ -2091,7 +2091,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         onClick={() => handleAnalyzeAndLaunch('voice', 'Voice Lecture Transcripts')}
                         className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
                       >
-                        Create Canvas
+                        Create Desk
                       </button>
                     </div>
                   </div>
@@ -2315,7 +2315,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </span>
           </button>
 
-          {/* CENTER PRIMARY ACTION: Large circular + (Add Source / Create Canvas) */}
+          {/* CENTER PRIMARY ACTION: Large circular + (Add Source / Create Desk) */}
           <button
             type="button"
             onClick={handleUniversalStartLearningClick}
@@ -2325,7 +2325,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <Plus className="w-6 h-6 stroke-[2.5]" />
           </button>
 
-          {/* RIGHT ACTION: Canvas */}
+          {/* RIGHT ACTION: Desk */}
           <button
             type="button"
             onClick={() => handleNavClick('canvases')}
@@ -2335,7 +2335,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           >
             <Diamond className={`w-[19px] h-[19px] ${activeNav === 'canvases' ? 'fill-current stroke-[2]' : 'stroke-[1.8]'}`} />
             <span className={`text-[10.5px] font-bold tracking-tight ${activeNav === 'canvases' ? 'text-[#111111]' : 'text-[#6B7280]'}`}>
-              Canvas
+              Desk
             </span>
           </button>
         </div>

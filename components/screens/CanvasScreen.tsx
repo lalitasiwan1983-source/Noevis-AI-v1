@@ -57,7 +57,7 @@ export const CanvasScreen: React.FC<CanvasScreenProps> = ({
           </div>
           <span className="hidden md:inline-block h-4 w-[1px] bg-[#E5E7EB]" />
           <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#4B5BEA] bg-[#EEF0FF] px-2.5 py-1 rounded-full border border-[#DCE1FD]">
-            <Sparkles className="w-3 h-3" /> Canvas Mode
+            <Sparkles className="w-3 h-3" /> Desk Mode
           </span>
           {onBackToHome && (
             <button
@@ -97,7 +97,7 @@ export const CanvasScreen: React.FC<CanvasScreenProps> = ({
         </div>
       </header>
 
-      {/* Main Canvas Workspace */}
+      {/* Main Desk Workspace */}
       <main className="w-full flex-1 max-w-7xl mx-auto px-4 sm:px-8 py-8 flex flex-col items-stretch gap-8">
         {/* Context Space Creator Header */}
         <motion.div
@@ -273,9 +273,9 @@ export const CanvasScreen: React.FC<CanvasScreenProps> = ({
         </section>
       </main>
 
-      {/* Canvas Footer */}
+      {/* Desk Footer */}
       <footer className="w-full h-12 bg-white border-t border-[#E5E7EB] px-8 flex items-center justify-between text-xs text-[#9CA3AF] shrink-0">
-        <div>NOEVIS CANVAS • Adaptive Context Environment</div>
+        <div>NOEVIS DESK • Adaptive Context Environment</div>
         <div className="flex items-center gap-4">
           <span>Age Group: {ageGroup}</span>
           <span>Context: {studyContext}</span>
