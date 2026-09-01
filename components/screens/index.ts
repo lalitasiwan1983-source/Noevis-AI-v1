@@ -7,3 +7,5 @@ export { CanvasScreen } from './CanvasScreen';
 export { MyDesksScreen } from './MyDesksScreen';
 export { CreateDeskScreen } from './CreateDeskScreen';
 export { LibraryScreen } from './LibraryScreen';
+export { ActivityScreen } from './ActivityScreen';
+export { SettingsScreen } from './SettingsScreen';

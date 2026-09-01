@@ -8,6 +8,8 @@ import { OnboardingData } from './OnboardingScreen';
 import { MyDesksScreen } from './MyDesksScreen';
 import { CreateDeskScreen } from './CreateDeskScreen';
 import { LibraryScreen } from './LibraryScreen';
+import { ActivityScreen } from './ActivityScreen';
+import { SettingsScreen } from './SettingsScreen';
 import {
   Sparkle,
   Diamond,
@@ -186,6 +188,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Navigation State (Exact 6 destinations)
   const [activeNav, setActiveNav] = useState<NavItemType>(initialNav);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Sidebar Open / Collapsed State (Desktop)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -303,6 +306,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   ];
 
   const handleNavClick = (navItem: NavItemType) => {
+    if (navItem === 'settings') {
+      setIsSettingsOpen(true);
+      setShowMobileDrawer(false);
+      return;
+    }
     setActiveNav(navItem);
     if (navItem !== 'canvases') {
       setIsCreatingDesk(false);
@@ -1206,76 +1214,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             />
           )}
 
-          {/* TAB: HISTORY */}
+          {/* TAB: HISTORY (ACTIVITY) */}
           {activeNav === 'history' && (
-            <motion.div
-              key="history-tab-content"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={transitionConfig}
-              className="w-full max-w-[840px] flex flex-col text-left"
-            >
-              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
-                <h1 className="text-2xl font-bold text-[#111111]">History</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Timeline of learning sessions and quiz completions</p>
-              </div>
-
-              <div className="p-8 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[20px] flex flex-col items-center text-center">
-                <Clock className="w-8 h-8 text-[#9CA3AF] mb-2 stroke-[1.5]" />
-                <h3 className="text-sm font-semibold text-[#111111]">No session history yet</h3>
-                <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
-                  As you interact with learning desks and practice quiz questions, your history will be recorded here.
-                </p>
-              </div>
-            </motion.div>
+            <ActivityScreen
+              onStartLearning={handleUniversalStartLearningClick}
+              desks={canvases}
+              onOpenActivity={(activity) => {
+                if (activity.targetSourceType) {
+                  onStartCanvas(activity.targetSourceType);
+                } else {
+                  handleUniversalStartLearningClick();
+                }
+              }}
+            />
           )}
 
-          {/* TAB: SETTINGS */}
-          {activeNav === 'settings' && (
-            <motion.div
-              key="settings-tab-content"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={transitionConfig}
-              className="w-full max-w-[840px] flex flex-col text-left"
-            >
-              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
-                <h1 className="text-2xl font-bold text-[#111111]">Settings</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Manage learning model preferences and account context</p>
-              </div>
-
-              <div className="p-6 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[20px] flex flex-col gap-4">
-                <h3 className="text-sm font-bold text-[#111111]">Learning Context Calibration</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
-                    <span className="text-[#6B7280] block mb-1">Study Context</span>
-                    <span className="font-semibold text-[#111111]">{studyContext}</span>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
-                    <span className="text-[#6B7280] block mb-1">Confidence</span>
-                    <span className="font-semibold text-[#111111]">{confidence}</span>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
-                    <span className="text-[#6B7280] block mb-1">Age Cohort</span>
-                    <span className="font-semibold text-[#111111]">{ageGroup}</span>
-                  </div>
-                </div>
-
-                {onResetOnboarding && (
-                  <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between">
-                    <span className="text-xs text-[#6B7280]">Recalibrate adaptive persona</span>
-                    <button
-                      type="button"
-                      onClick={onResetOnboarding}
-                      className="px-3 py-1.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F5F5F5] text-xs font-semibold text-[#111111] transition-colors cursor-pointer"
-                    >
-                      Reset Onboarding
-                    </button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
+          {/* Removed TAB: SETTINGS from here to be handled by the modal overlay */}
 
           {/* TAB: HELP */}
           {activeNav === 'help' && (
@@ -2125,6 +2079,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ================================================== */}
+      {/* SETTINGS OVERLAY MODAL                             */}
+      {/* ================================================== */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <SettingsScreen
+            onClose={() => setIsSettingsOpen(false)}
+            userEmail={userEmail}
+            userName={userName}
+            userInitials={userInitials}
+            onboardingData={onboardingData}
+            onResetOnboarding={onResetOnboarding}
+          />
         )}
       </AnimatePresence>
 
