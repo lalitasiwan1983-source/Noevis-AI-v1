@@ -6,44 +6,41 @@ import { Logo } from '@/components/design-system/Logo';
 import { useToast } from '@/components/design-system/Toast';
 import { OnboardingData } from './OnboardingScreen';
 import {
-  Home,
-  Layers,
-  Bookmark,
-  History,
+  Sparkle,
+  Diamond,
+  LayoutGrid,
+  ArrowUpRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   HelpCircle,
   Plus,
   Search,
   ArrowRight,
-  Upload,
   FileText,
+  FileUp,
+  Clipboard,
   Link as LinkIcon,
   MoreHorizontal,
   Menu,
-  User,
   X,
   RotateCcw,
-  Sparkles,
-  BookOpen,
-  Brain,
-  Eye,
-  Target,
   Youtube,
   Camera,
   Mic,
   Plug,
-  ChevronRight,
+  Folder,
+  FolderOpen,
+  ChevronDown,
   Clock,
-  CheckCircle2,
   FileCode,
-  FolderPlus,
-  ExternalLink,
-  Sliders,
-  Shield,
-  HelpCircle as QuestionIcon,
-  Trash2,
-  Share2,
-  MoreVertical,
+  BookOpen,
+  Home,
+  Layers,
+  Bookmark,
+  History,
+  Check,
+  Monitor,
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -54,12 +51,12 @@ interface HomeScreenProps {
 }
 
 type NavItemType = 'home' | 'canvases' | 'library' | 'history' | 'settings' | 'help';
-type SourceModalType = 'upload' | 'paste' | 'link' | 'youtube' | 'camera' | 'voice' | null;
+type SourceModalType = 'all' | 'upload' | 'paste' | 'link' | 'youtube' | 'camera' | 'voice' | 'connectors' | 'more' | 'record' | null;
 
 interface CanvasItem {
   id: string;
   title: string;
-  sourceType: 'pdf' | 'text' | 'link' | 'youtube';
+  sourceType: 'pdf' | 'text' | 'link' | 'youtube' | 'voice';
   sourceName: string;
   updatedAt: string;
   elementsCount: {
@@ -69,8 +66,110 @@ interface CanvasItem {
   };
 }
 
+const CanvasMenuPopover: React.FC<{
+  canvas: CanvasItem;
+  onDelete: () => void;
+  onRename: (newTitle: string) => void;
+}> = ({ canvas, onDelete, onRename }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(canvas.title);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const clickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', clickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', clickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative shrink-0 flex items-center" ref={menuRef}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="w-7 h-7 rounded-lg hover:bg-[#EFEFEF] flex items-center justify-center text-[#6B7280] hover:text-[#111111] cursor-pointer"
+        title="More actions"
+        aria-label="More actions"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-8 w-[160px] bg-white border border-[#E5E7EB] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-1 z-50 flex flex-col">
+          {isRenaming ? (
+            <div className="p-1.5 flex flex-col gap-1.5">
+              <input
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && renameValue.trim()) {
+                    onRename(renameValue.trim());
+                    setIsRenaming(false);
+                    setIsOpen(false);
+                  }
+                }}
+                className="w-full text-xs border border-[#E5E7EB] rounded px-1.5 py-1 text-[#111111] focus:outline-none focus:border-[#111111]"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (renameValue.trim()) {
+                    onRename(renameValue.trim());
+                    setIsRenaming(false);
+                    setIsOpen(false);
+                  }
+                }}
+                className="w-full bg-[#111111] hover:bg-[#222222] text-white text-[10px] font-semibold py-1 rounded"
+              >
+                Save
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsRenaming(true);
+                }}
+                className="w-full text-left px-2 py-1.5 rounded hover:bg-[#F5F5F5] text-xs text-[#111111] font-medium"
+              >
+                Rename
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                  setIsOpen(false);
+                }}
+                className="w-full text-left px-2 py-1.5 rounded hover:bg-red-50 text-xs text-red-600 font-medium"
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({
-  userEmail = 'learner@noevis.ai',
+  userEmail = 'satyam@example.com',
   onboardingData,
   onStartCanvas,
   onResetOnboarding,
@@ -81,12 +180,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Navigation State (Exact 6 destinations)
   const [activeNav, setActiveNav] = useState<NavItemType>('home');
 
+  // Sidebar Open / Collapsed State (Desktop)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+
   // Source Entry Modals & Popovers
   const [activeSourceModal, setActiveSourceModal] = useState<SourceModalType>(null);
-  const [showMoreWays, setShowMoreWays] = useState(false);
-  const [showSearchModal, setShowSearchModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Source Form Input States
@@ -95,311 +195,489 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [isProcessingSource, setIsProcessingSource] = useState(false);
 
-  // Canvases State (Starts empty for new user; user can add to explore both states)
+  // New premium interactive source analysis and progress states
+  const [selectedUploadFile, setSelectedUploadFile] = useState<{ name: string; size: string } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisProgress, setAnalysisProgress] = useState<number>(0);
+  const [showSuccessState, setShowSuccessState] = useState<boolean>(false);
+  const [successCanvasType, setSuccessCanvasType] = useState<string>('upload');
+  const [successCanvasTitle, setSuccessCanvasTitle] = useState<string>('');
+
+  // Canvases State (Starts clean and empty for new user)
   const [canvases, setCanvases] = useState<CanvasItem[]>([]);
 
-  // Popover Refs
-  const moreWaysRef = useRef<HTMLDivElement>(null);
+  // Refs
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Click outside handlers
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (moreWaysRef.current && !moreWaysRef.current.contains(event.target as Node)) {
-        setShowMoreWays(false);
-      }
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Derive display user name and initials
+  const userName = userEmail.includes('satyam')
+    ? 'Satyam Yadav'
+    : userEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const userInitials = userEmail.includes('satyam')
+    ? 'SY'
+    : userEmail.substring(0, 2).toUpperCase();
 
   const studyContext = onboardingData?.studyContext || 'College & University';
   const confidence = onboardingData?.confidenceLevel || 'Getting familiar';
   const ageGroup = onboardingData?.ageGroup || '18+';
 
-  // Navigation items definition (Exact 6)
-  const navItems = [
-    { id: 'home' as NavItemType, label: 'Home', icon: Home },
-    { id: 'canvases' as NavItemType, label: 'My Canvases', icon: Layers },
-    { id: 'library' as NavItemType, label: 'Library', icon: Bookmark },
-    { id: 'history' as NavItemType, label: 'History', icon: History },
+  const handleTryCloseModal = () => {
+    const hasUnsaved = (pasteText && pasteText.trim() !== '') || (linkUrl && linkUrl.trim() !== '') || (youtubeUrl && youtubeUrl.trim() !== '') || selectedUploadFile !== null;
+    if (hasUnsaved) {
+      if (window.confirm('Do you want to discard your learning material draft?')) {
+        setPasteText('');
+        setLinkUrl('');
+        setYoutubeUrl('');
+        setSelectedUploadFile(null);
+        setUploadProgress(0);
+        setIsUploading(false);
+        setIsAnalyzing(false);
+        setAnalysisProgress(0);
+        setShowSuccessState(false);
+        setActiveSourceModal(null);
+      }
+    } else {
+      // Just clear helper states as well on simple close
+      setPasteText('');
+      setLinkUrl('');
+      setYoutubeUrl('');
+      setSelectedUploadFile(null);
+      setUploadProgress(0);
+      setIsUploading(false);
+      setIsAnalyzing(false);
+      setAnalysisProgress(0);
+      setShowSuccessState(false);
+      setActiveSourceModal(null);
+    }
+  };
+
+  // Global Escape handler and click outside
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowMobileDrawer(false);
+        // Safely close the active source modal with unsaved draft detection
+        if (activeSourceModal) {
+          handleTryCloseModal();
+        }
+        setShowProfileMenu(false);
+      }
+    };
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [pasteText, linkUrl, youtubeUrl, selectedUploadFile, activeSourceModal]);
+
+  // Navigation items definition (Exact 6 destinations)
+  const mainNavItems = [
+    { id: 'home' as NavItemType, label: 'Start', icon: Sparkle },
+    { id: 'canvases' as NavItemType, label: 'Canvases', icon: Diamond },
+    { id: 'library' as NavItemType, label: 'Library', icon: LayoutGrid },
+    { id: 'history' as NavItemType, label: 'Activity', icon: ArrowUpRight },
+  ];
+
+  const systemNavItems = [
     { id: 'settings' as NavItemType, label: 'Settings', icon: Settings },
     { id: 'help' as NavItemType, label: 'Help', icon: HelpCircle },
   ];
 
   const handleNavClick = (navItem: NavItemType) => {
     setActiveNav(navItem);
-    setShowMobileMenu(false);
+    setShowMobileDrawer(false);
   };
 
-  // Open source-adding flow
-  const handleOpenSourceModal = (sourceType: SourceModalType) => {
-    setShowMoreWays(false);
-    setActiveSourceModal(sourceType);
-  };
-
-  // Handle direct start learning trigger
-  const handleStartLearningClick = () => {
-    setShowMoreWays(false);
-    setActiveSourceModal('upload');
-  };
-
-  // Process and transition to Canvas
-  const handleCompleteSourceEntry = (type: string, title?: string) => {
-    setIsProcessingSource(true);
-    setTimeout(() => {
-      setIsProcessingSource(false);
-      setActiveSourceModal(null);
-      
-      // Also register a new canvas item in list so user can see populated state
-      const newCanvas: CanvasItem = {
-        id: `canvas-${Date.now()}`,
-        title: title || (type === 'upload' ? 'Quantum Mechanics Introduction' : type === 'paste' ? 'Linear Algebra Eigenvalues' : 'Photosynthesis & Cellular Respiration'),
-        sourceType: (type === 'upload' ? 'pdf' : type === 'paste' ? 'text' : type === 'youtube' ? 'youtube' : 'link'),
-        sourceName: title || (type === 'upload' ? 'Quantum_Notes.pdf' : type === 'paste' ? 'Pasted Study Text' : 'web_source.html'),
-        updatedAt: 'Just now',
-        elementsCount: {
-          explanations: 3,
-          questions: 8,
-          visuals: 2,
-        },
-      };
-      setCanvases((prev) => [newCanvas, ...prev]);
-
-      success('Source Prepared', 'Launching your adaptive Canvas workspace...');
-      onStartCanvas(type);
-    }, 900);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      handleCompleteSourceEntry('upload', file.name.replace(/\.[^/.]+$/, ''));
+  // 1. Direct native file upload trigger
+  const handleDirectUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
     }
   };
 
-  const handleAddSampleCanvas = () => {
-    const sample: CanvasItem = {
-      id: `canvas-sample-${Date.now()}`,
-      title: 'Neural Networks & Backpropagation',
-      sourceType: 'pdf',
-      sourceName: 'DeepLearning_Chapter3.pdf',
-      updatedAt: '2 hours ago',
+  // Helper to trigger simulated file upload inside the panel
+  const startFileUploadingSimulation = (fileName: string, fileSize: string) => {
+    setSelectedUploadFile({ name: fileName, size: fileSize });
+    setUploadProgress(0);
+    setIsUploading(true);
+    setActiveSourceModal('upload');
+
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += Math.floor(Math.random() * 20) + 15;
+      if (currentProgress >= 100) {
+        currentProgress = 100;
+        clearInterval(interval);
+        setIsUploading(false);
+      }
+      setUploadProgress(currentProgress);
+    }, 150);
+  };
+
+  // Handle actual file picked from native dialog
+  const handleNativeFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const sizeStr = file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${(file.size / 1024).toFixed(0)} KB`;
+      startFileUploadingSimulation(file.name, sizeStr);
+    }
+  };
+
+  // 2. Direct Paste trigger
+  const handleDirectPasteClick = () => {
+    setActiveSourceModal('paste');
+  };
+
+  // 3. Direct Link trigger
+  const handleDirectLinkClick = () => {
+    setActiveSourceModal('link');
+  };
+
+  // 4. More trigger (remaining sources)
+  const handleDirectMoreClick = () => {
+    setActiveSourceModal('more');
+  };
+
+  // 5. Large Start Learning Card trigger (all supported sources)
+  const handleUniversalStartLearningClick = () => {
+    setActiveSourceModal('all');
+  };
+
+  // Simulated premium interactive analysis flow leading to Success State
+  const handleAnalyzeAndLaunch = (type: string, title?: string) => {
+    setIsAnalyzing(true);
+    setAnalysisProgress(0);
+    setSuccessCanvasType(type);
+    
+    const formattedTitle = title || (
+      type === 'upload' ? (selectedUploadFile?.name.replace(/\.[^/.]+$/, '') || 'Uploaded Study Material') :
+      type === 'paste' ? 'Structured Text Notes' :
+      type === 'youtube' ? 'YouTube Lecture Workspace' :
+      type === 'link' ? 'Web Article Analysis' :
+      type === 'camera' ? 'Scan / Photo OCR Workspace' :
+      type === 'voice' ? 'Voice Lecture Concept Workspace' :
+      'Adaptive Learning Space'
+    );
+    setSuccessCanvasTitle(formattedTitle);
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 12) + 8;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        setIsAnalyzing(false);
+        setShowSuccessState(true);
+      }
+      setAnalysisProgress(progress);
+    }, 180);
+  };
+
+  // Executed on confirming success state to start the workspace
+  const handleFinalLaunch = () => {
+    const type = successCanvasType;
+    const title = successCanvasTitle;
+
+    // Reset helper states
+    setPasteText('');
+    setLinkUrl('');
+    setYoutubeUrl('');
+    setSelectedUploadFile(null);
+    setUploadProgress(0);
+    setIsUploading(false);
+    setIsAnalyzing(false);
+    setAnalysisProgress(0);
+    setShowSuccessState(false);
+    setActiveSourceModal(null);
+
+    // Register canvas item in list so user can see it in home grid
+    const newCanvas: CanvasItem = {
+      id: `canvas-${Date.now()}`,
+      title: title,
+      sourceType:
+        type === 'upload' ? 'pdf' : type === 'paste' ? 'text' : type === 'youtube' ? 'youtube' : 'link',
+      sourceName:
+        type === 'upload' ? (selectedUploadFile?.name || 'Lecture_Notes.pdf') :
+        type === 'paste' ? 'Pasted Text Excerpt' :
+        type === 'youtube' ? (youtubeUrl || 'youtube_video.mp4') :
+        type === 'link' ? (linkUrl || 'web_source.html') :
+        'source_material.txt',
+      updatedAt: 'Just now',
       elementsCount: {
-        explanations: 4,
-        questions: 12,
-        visuals: 3,
+        explanations: 3,
+        questions: 8,
+        visuals: 2,
       },
     };
-    setCanvases((prev) => [sample, ...prev]);
-    info('Sample Canvas Added', 'Added a sample learning space to My Canvases.');
+    setCanvases((prev) => [newCanvas, ...prev]);
+
+    success('Source Prepared', 'Launching your adaptive Canvas workspace...');
+    onStartCanvas(type);
+  };
+
+  // Fallback for legacy calls
+  const handleProcessAndLaunch = (type: string, title?: string) => {
+    handleAnalyzeAndLaunch(type, title);
   };
 
   const transitionConfig = shouldReduceMotion
     ? { duration: 0.15 }
-    : { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
+    : { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const };
 
   return (
     <div
       id="noevis-home-screen"
-      className="relative min-h-[100dvh] w-full bg-[#F7F8FA] text-[#111827] select-none overflow-x-hidden flex"
+      className="relative min-h-[100dvh] w-full bg-[#F7F8FA] text-[#111111] select-none overflow-x-hidden flex"
     >
+      {/* Hidden native file input for direct upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.mp3,.mp4,.wav,.m4a,.png,.jpg,.jpeg"
+        onChange={handleNativeFileUpload}
+        className="hidden"
+      />
+
       {/* ================================================== */}
-      {/* 1. DESKTOP FIXED LEFT SIDEBAR (1024px+)             */}
+      {/* 1. DESKTOP SIDEBAR (EXPANDED 280px / COLLAPSED 72px) */}
       {/* ================================================== */}
       <aside
         id="desktop-sidebar"
-        className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[260px] bg-[#FFFFFF] border-r border-[#E5E7EB] z-30 flex-col justify-between p-5 select-none"
+        className={`hidden lg:flex fixed left-0 top-0 bottom-0 bg-[#FFFFFF] border-r border-[#E5E7EB] z-30 flex-col justify-between select-none transition-all duration-200 ease-out ${
+          isSidebarOpen ? 'w-[280px] p-5' : 'w-[72px] py-5 px-3 items-center'
+        }`}
       >
-        {/* Top Section */}
-        <div className="flex flex-col gap-6">
-          {/* 1. NOEVIS AI Logo */}
-          <div
-            className="pt-1 px-1 cursor-pointer"
-            onClick={() => setActiveNav('home')}
-            title="NOEVIS AI Home"
-          >
-            <Logo size="sm" variant="full" showBadge={false} />
-          </div>
-
-          {/* 2. Primary CTA: + Start learning (Visually stronger than navigation items) */}
-          <button
-            type="button"
-            id="sidebar-start-learning-btn"
-            onClick={handleStartLearningClick}
-            className="w-full h-[48px] px-4 bg-[#111827] hover:bg-[#1F2937] active:bg-[#030712] text-white rounded-[13px] font-semibold text-[14px] flex items-center justify-center gap-2.5 transition-all shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B5BEA]"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Start learning</span>
-          </button>
-
-          {/* 3. Navigation Destinations (Exactly 6) */}
-          <nav aria-label="Main Navigation" className="flex flex-col gap-1 mt-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeNav === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  id={`sidebar-nav-${item.id}`}
-                  type="button"
-                  onClick={() => handleNavClick(item.id)}
-                  className={`w-full h-[44px] px-3.5 rounded-[12px] flex items-center gap-3 text-[14.5px] transition-colors duration-180 cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B5BEA] ${
-                    isActive
-                      ? 'bg-[#EEF0FF] border border-[#DCE1FD] text-[#111827] font-semibold shadow-2xs'
-                      : 'text-[#667085] hover:text-[#111827] hover:bg-[#F3F4F6] font-medium'
-                  }`}
+        {isSidebarOpen ? (
+          /* ---------------- EXPANDED SIDEBAR (280px) ---------------- */
+          <div className="flex flex-col h-full w-full justify-between overflow-hidden">
+            {/* Top Container */}
+            <div className="flex flex-col gap-5 w-full shrink-0">
+              {/* Header: Logo and PanelLeftClose Collapse Control */}
+              <div className="flex items-center justify-between pt-1">
+                <div
+                  className="cursor-pointer"
+                  onClick={() => setActiveNav('home')}
+                  title="NOEVIS AI Home"
                 >
-                  <Icon
-                    className={`w-[19px] h-[19px] stroke-[2] transition-colors duration-180 ${
-                      isActive ? 'text-[#4B5BEA]' : 'text-[#667085] group-hover:text-[#111827]'
-                    }`}
-                  />
-                  <span>{item.label}</span>
+                  <Logo size="sm" variant="full" showBadge={false} />
+                </div>
+
+                {/* Collapse Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                  title="Collapse navigation"
+                  aria-label="Collapse navigation"
+                >
+                  <PanelLeftClose className="w-5 h-5 stroke-[1.9] text-[#111111]" />
                 </button>
-              );
-            })}
-          </nav>
-        </div>
+              </div>
 
-        {/* Bottom Section: User Profile & Account Affordance */}
-        <div className="pt-4 border-t border-[#E5E7EB] flex flex-col gap-2.5">
-          <div
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#F3F4F6] transition-colors cursor-pointer"
-          >
-            <div className="w-9 h-9 rounded-full bg-[#111827] text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-2xs">
-              {userEmail.charAt(0).toUpperCase()}
-            </div>
-            <div className="truncate flex-1">
-              <p className="text-[13px] font-semibold text-[#111827] truncate leading-snug">
-                {userEmail}
-              </p>
-              <p className="text-[11.5px] text-[#667085] truncate">
-                {studyContext}
-              </p>
-            </div>
-            <Sliders className="w-3.5 h-3.5 text-[#9CA3AF]" />
-          </div>
-
-          {onResetOnboarding && (
-            <button
-              type="button"
-              onClick={onResetOnboarding}
-              className="w-full px-2.5 py-1.5 text-[11.5px] font-medium text-[#667085] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg transition-colors cursor-pointer flex items-center gap-2"
-              title="Reset Onboarding Setup"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-[#9CA3AF]" />
-              <span>Reset Learning Context</span>
-            </button>
-          )}
-        </div>
-      </aside>
-
-      {/* ================================================== */}
-      {/* 2. MAIN WORKSPACE CONTAINER (lg:pl-[260px])          */}
-      {/* ================================================== */}
-      <div className="flex-1 lg:pl-[260px] min-h-[100dvh] flex flex-col justify-between w-full">
-        {/* TOP HEADER */}
-        <header className="w-full h-[64px] sm:h-[70px] bg-[#FFFFFF] border-b border-[#E5E7EB] px-5 sm:px-8 md:px-12 flex items-center justify-between lg:justify-end shrink-0 z-20 sticky top-0">
-          {/* Mobile/Tablet Left: Logo */}
-          <div className="lg:hidden flex items-center">
-            <Logo size="sm" variant="full" showBadge={false} />
-          </div>
-
-          {/* Right Controls: Search, Profile, Mobile Menu */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Global Search Bar (Desktop) */}
-            <div className="hidden md:flex items-center relative w-[280px] lg:w-[320px]">
-              <Search className="w-4 h-4 text-[#9CA3AF] absolute left-4 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchQuery.trim()) {
-                    handleCompleteSourceEntry('paste', searchQuery.trim());
-                  }
-                }}
-                placeholder="Search anything..."
-                className="w-full h-[46px] pl-11 pr-4 bg-[#F7F8FA] border border-[#E5E7EB] focus:border-[#4B5BEA] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#4B5BEA] rounded-[13px] text-sm text-[#111827] placeholder:text-[#9CA3AF] focus-visible:outline-none transition-all duration-150"
-              />
-            </div>
-
-            {/* Mobile Search Button */}
-            <button
-              type="button"
-              onClick={() => setShowSearchModal(true)}
-              className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-[#111827] hover:bg-[#F3F4F6] active:bg-[#E5E7EB] transition-colors cursor-pointer"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5 stroke-[2]" />
-            </button>
-
-            {/* Profile Avatar Button with Dropdown */}
-            <div className="relative" ref={profileMenuRef}>
+              {/* Start Learning Action Button */}
               <button
                 type="button"
-                id="header-profile-btn"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-10 h-10 rounded-full bg-[#EAECEF] hover:bg-[#D9DDE3] flex items-center justify-center text-[#111827] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B5BEA]"
-                aria-label="Profile"
-                aria-expanded={showProfileMenu}
+                id="sidebar-start-learning-btn"
+                onClick={handleUniversalStartLearningClick}
+                className="w-full h-[50px] px-4 bg-[#FFFFFF] hover:bg-[#F5F5F5] active:bg-[#EFEFEF] border border-[#E5E7EB] rounded-[12px] text-[15px] font-semibold text-[#111111] flex items-center gap-3 transition-colors cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus-visible:outline-none"
               >
-                <User className="w-5 h-5 stroke-[2.2] text-[#374151]" />
+                <Plus className="w-5 h-5 stroke-[2.2] text-[#111111]" />
+                <span>Start learning</span>
               </button>
 
-              {/* Profile Popover */}
-              <AnimatePresence>
-                {showProfileMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.96, y: 6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.96, y: 6 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2.5 w-64 bg-white border border-[#E5E7EB] rounded-2xl shadow-xl p-4 z-50 text-left"
-                  >
-                    <div className="flex items-center gap-3 pb-3 border-b border-[#F3F4F6]">
-                      <div className="w-9 h-9 rounded-full bg-[#111827] text-white flex items-center justify-center text-sm font-bold">
-                        {userEmail.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="truncate">
-                        <p className="text-sm font-semibold text-[#111827] truncate">{userEmail}</p>
-                        <p className="text-xs text-[#667085]">Learner Profile</p>
-                      </div>
-                    </div>
+              {/* Primary Navigation Items */}
+              <nav aria-label="Main Navigation" className="flex flex-col gap-2">
+                {mainNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeNav === item.id;
 
-                    <div className="py-3 border-b border-[#F3F4F6] flex flex-col gap-1.5 text-xs text-[#4B5563]">
-                      <div className="flex justify-between">
-                        <span className="text-[#9CA3AF]">Age Group:</span>
-                        <span className="font-semibold text-[#111827]">{ageGroup}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#9CA3AF]">Context:</span>
-                        <span className="font-semibold text-[#111827]">{studyContext}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#9CA3AF]">Confidence:</span>
-                        <span className="font-semibold text-[#111827]">{confidence}</span>
-                      </div>
-                    </div>
+                  return (
+                    <button
+                      key={item.id}
+                      id={`sidebar-nav-${item.id}`}
+                      type="button"
+                      onClick={() => handleNavClick(item.id)}
+                      className={`w-full h-[50px] px-4 rounded-[12px] flex items-center gap-3.5 text-[17px] transition-colors duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                        isActive
+                          ? 'bg-[#F1F1F1] text-[#111111] font-semibold'
+                          : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                      }`}
+                    >
+                      <Icon className="w-[23px] h-[23px] stroke-[1.8] text-[#111111]" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
 
-                    <div className="pt-2 flex flex-col gap-1">
+            {/* Middle Section (Scrollable Dynamic Content) */}
+            <div className="flex-1 overflow-y-auto my-3 pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+              {canvases.length > 0 && (
+                <div className="flex flex-col gap-5">
+                  {/* Recent List */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#6B7280] tracking-wider uppercase">
+                      <span>Recent</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveNav('history')}
+                        className="hover:underline text-[11px] normal-case font-medium text-[#111111] cursor-pointer"
+                      >
+                        View all
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      {canvases.slice(0, 4).map((canvas) => (
+                        <button
+                          key={`recent-${canvas.id}`}
+                          type="button"
+                          onClick={() => onStartCanvas(canvas.sourceType)}
+                          className="w-full h-[38px] px-3 rounded-[10px] hover:bg-[#F5F5F5] transition-colors flex items-center gap-2.5 text-[14px] text-left text-[#111111] font-medium truncate cursor-pointer"
+                        >
+                          <Clock className="w-4 h-4 text-[#6B7280] shrink-0" />
+                          <span className="truncate flex-1">{canvas.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Canvases List */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#6B7280] tracking-wider uppercase">
+                      <span>Canvases</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveNav('canvases')}
+                        className="hover:underline text-[11px] normal-case font-medium text-[#111111] cursor-pointer"
+                      >
+                        View all
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      {canvases.map((canvas) => (
+                        <div
+                          key={`canvas-sidebar-${canvas.id}`}
+                          className="w-full h-[38px] px-3 rounded-[10px] hover:bg-[#F5F5F5] transition-colors flex items-center justify-between gap-2 text-[14px] text-[#111111] font-medium group relative"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => onStartCanvas(canvas.sourceType)}
+                            className="flex-1 flex items-center gap-2.5 text-left truncate cursor-pointer h-full"
+                          >
+                            <Diamond className="w-3.5 h-3.5 text-[#111111] shrink-0" />
+                            <span className="truncate">{canvas.title}</span>
+                          </button>
+                          
+                          <CanvasMenuPopover
+                            canvas={canvas}
+                            onDelete={() => {
+                              setCanvases((prev) => prev.filter((c) => c.id !== canvas.id));
+                              success('Canvas deleted', 'Learning workspace has been removed.');
+                            }}
+                            onRename={(newTitle) => {
+                              setCanvases((prev) =>
+                                prev.map((c) => (c.id === canvas.id ? { ...c, title: newTitle } : c))
+                              );
+                              success('Canvas renamed', `Workspace title updated to "${newTitle}"`);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Container */}
+            <div className="flex flex-col gap-4 pt-3 border-t border-[#E5E7EB] shrink-0">
+              {/* System Navigation Items */}
+              <nav aria-label="System Navigation" className="flex flex-col gap-2">
+                {systemNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeNav === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      id={`sidebar-nav-${item.id}`}
+                      type="button"
+                      onClick={() => handleNavClick(item.id)}
+                      className={`w-full h-[48px] px-4 rounded-[12px] flex items-center gap-3.5 text-[17px] transition-colors duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                        isActive
+                          ? 'bg-[#F1F1F1] text-[#111111] font-semibold'
+                          : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                      }`}
+                    >
+                      <Icon className="w-[23px] h-[23px] stroke-[1.8] text-[#111111]" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Profile area */}
+              <div className="relative" ref={profileMenuRef}>
+                <div
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="w-full h-[58px] bg-[#FFFFFF] border border-[#E5E7EB] rounded-[14px] p-2.5 flex items-center justify-between hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <div className="w-9 h-9 rounded-full bg-[#111111] text-white text-[12px] font-bold flex items-center justify-center shrink-0">
+                      {userInitials}
+                    </div>
+                    <div className="truncate text-left">
+                      <p className="text-[13.5px] font-semibold text-[#111111] truncate leading-tight">
+                        {userName}
+                      </p>
+                      <p className="text-[11.5px] text-[#6B7280] truncate mt-0.5">
+                        {userEmail}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-[#111111] shrink-0 ml-1.5" />
+                </div>
+
+                {/* Profile popover */}
+                <AnimatePresence>
+                  {showProfileMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.97, y: 6 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute bottom-[66px] left-0 right-0 bg-white border border-[#E5E7EB] rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-2.5 text-left flex flex-col gap-1 z-50"
+                    >
+                      <div className="px-2 py-1.5 border-b border-[#E5E7EB] text-xs text-[#6B7280]">
+                        <p className="font-semibold text-[#111111] text-[13px]">{userName}</p>
+                        <p className="text-[11px] mt-0.5">{studyContext} • {confidence}</p>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => {
                           setShowProfileMenu(false);
                           setActiveNav('settings');
                         }}
-                        className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium text-[#111827] hover:bg-[#F3F4F6] flex items-center gap-2"
+                        className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
                       >
-                        <Settings className="w-3.5 h-3.5 text-[#667085]" />
+                        <Settings className="w-3.5 h-3.5 text-[#6B7280]" />
                         <span>Manage Settings</span>
                       </button>
 
@@ -410,642 +688,648 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             setShowProfileMenu(false);
                             onResetOnboarding();
                           }}
-                          className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium text-[#4B5BEA] hover:bg-[#EEF0FF] flex items-center gap-2"
+                          className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Reset Onboarding Context</span>
+                          <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
+                          <span>Reset Onboarding</span>
                         </button>
                       )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Mobile Menu Hamburger Button */}
-            <button
-              type="button"
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-[#111827] hover:bg-[#F3F4F6] active:bg-[#E5E7EB] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B5BEA]"
-              aria-label="Menu"
-              aria-expanded={showMobileMenu}
-            >
-              <Menu className="w-5 h-5 stroke-[2.2]" />
-            </button>
-          </div>
-        </header>
-
-        {/* ================================================== */}
-        {/* MAIN BODY AREA — DEDICATED VIEW SWITCHER           */}
-        {/* ================================================== */}
-        <main className="w-full flex-1 flex flex-col items-center px-4 sm:px-8 md:px-12 py-8 sm:py-12 my-auto">
-          {/* ------------------------------------------------ */}
-          {/* TAB 1: HOME (THE MAIN LEARNING COMMAND CENTER)   */}
-          {/* ------------------------------------------------ */}
-          {activeNav === 'home' && (
-            <motion.div
-              key="home-tab-content"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={transitionConfig}
-              className="w-full max-w-[800px] flex flex-col items-center text-center"
-            >
-              {/* 1. HERO SECTION */}
-              <div className="mb-8 sm:mb-10 text-center">
-                <h1
-                  id="home-hero-headline"
-                  className="text-[34px] sm:text-[44px] md:text-[50px] font-bold text-[#111827] tracking-[-0.035em] leading-[1.08] mb-3"
-                >
-                  Start your learning journey.
-                </h1>
-
-                <p
-                  id="home-hero-supporting"
-                  className="text-[15.5px] sm:text-[17px] md:text-[18px] font-normal text-[#667085] tracking-[-0.01em] leading-[1.45] max-w-[620px] mx-auto"
-                >
-                  Bring something you want to learn. Noevis will turn it into an adaptive learning Canvas.
-                </p>
-              </div>
-
-              {/* 2. PRIMARY START LEARNING CARD (LARGE, PREMIUM LIGHT SURFACE) */}
-              <div
-                id="start-learning-card"
-                onClick={handleStartLearningClick}
-                className="group w-full min-h-[145px] sm:min-h-[160px] md:min-h-[170px] p-5 sm:p-7 md:p-8 bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#CBD5E1] hover:bg-[#FCFDFF] rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] active:scale-[0.995] transition-all duration-200 cursor-pointer flex items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B5BEA] select-none"
-              >
-                {/* Left: Large Circular / Soft Icon Container */}
-                <div className="w-[84px] h-[84px] sm:w-[104px] sm:h-[104px] md:w-[114px] md:h-[114px] rounded-full border border-[#E5E7EB] bg-[#F9FAFB] group-hover:bg-[#F3F4F6] flex items-center justify-center shrink-0 transition-colors shadow-2xs">
-                  <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-[#111827] stroke-[1.8] group-hover:scale-110 transition-transform duration-200" />
-                </div>
-
-                {/* Center: Title & Supporting Copy */}
-                <div className="flex-1 px-4 sm:px-6 md:px-8">
-                  <h2 className="text-[20px] sm:text-[24px] md:text-[26px] font-bold text-[#111827] tracking-[-0.025em] leading-tight mb-1.5">
-                    Start learning
-                  </h2>
-                  <p className="text-[14px] sm:text-[15.5px] md:text-[16.5px] font-normal text-[#667085] leading-[1.4] tracking-[-0.01em]">
-                    Bring a source and Noevis will prepare your Canvas.
-                  </p>
-                </div>
-
-                {/* Right: Forward Arrow */}
-                <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 text-[#111827]">
-                  <ArrowRight className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2] group-hover:translate-x-1.5 transition-transform duration-200" />
-                </div>
-              </div>
-
-              {/* 3. SOURCE INPUT ACTIONS (CLEAN HORIZONTAL ACTION ROW) */}
-              <div className="w-full mt-6 sm:mt-8 relative" ref={moreWaysRef}>
-                <div className="flex flex-wrap items-center justify-center gap-y-2.5 gap-x-1 sm:gap-x-2 text-sm font-medium text-[#111827]">
-                  {/* Action 1: Upload a file */}
-                  <button
-                    type="button"
-                    id="source-action-upload"
-                    onClick={() => handleOpenSourceModal('upload')}
-                    className="flex items-center gap-2 px-3.5 py-2 hover:bg-[#FFFFFF] hover:shadow-2xs rounded-xl hover:text-[#4B5BEA] border border-transparent hover:border-[#E5E7EB] transition-all cursor-pointer group"
-                  >
-                    <Upload className="w-4 h-4 text-[#667085] group-hover:text-[#4B5BEA] transition-colors stroke-[2]" />
-                    <span>Upload a file</span>
-                  </button>
-
-                  <span className="hidden sm:inline-block h-4 w-[1px] bg-[#E5E7EB]" aria-hidden="true" />
-
-                  {/* Action 2: Paste text */}
-                  <button
-                    type="button"
-                    id="source-action-paste"
-                    onClick={() => handleOpenSourceModal('paste')}
-                    className="flex items-center gap-2 px-3.5 py-2 hover:bg-[#FFFFFF] hover:shadow-2xs rounded-xl hover:text-[#4B5BEA] border border-transparent hover:border-[#E5E7EB] transition-all cursor-pointer group"
-                  >
-                    <FileText className="w-4 h-4 text-[#667085] group-hover:text-[#4B5BEA] transition-colors stroke-[2]" />
-                    <span>Paste text</span>
-                  </button>
-
-                  <span className="hidden sm:inline-block h-4 w-[1px] bg-[#E5E7EB]" aria-hidden="true" />
-
-                  {/* Action 3: Add a link */}
-                  <button
-                    type="button"
-                    id="source-action-link"
-                    onClick={() => handleOpenSourceModal('link')}
-                    className="flex items-center gap-2 px-3.5 py-2 hover:bg-[#FFFFFF] hover:shadow-2xs rounded-xl hover:text-[#4B5BEA] border border-transparent hover:border-[#E5E7EB] transition-all cursor-pointer group"
-                  >
-                    <LinkIcon className="w-4 h-4 text-[#667085] group-hover:text-[#4B5BEA] transition-colors stroke-[2]" />
-                    <span>Add a link</span>
-                  </button>
-
-                  <span className="hidden sm:inline-block h-4 w-[1px] bg-[#E5E7EB]" aria-hidden="true" />
-
-                  {/* Action 4: More ways (Opens clean Popover) */}
-                  <button
-                    type="button"
-                    id="source-action-more"
-                    onClick={() => setShowMoreWays(!showMoreWays)}
-                    aria-expanded={showMoreWays}
-                    className="flex items-center gap-2 px-3.5 py-2 hover:bg-[#FFFFFF] hover:shadow-2xs rounded-xl hover:text-[#4B5BEA] border border-transparent hover:border-[#E5E7EB] transition-all cursor-pointer group"
-                  >
-                    <MoreHorizontal className="w-4 h-4 text-[#667085] group-hover:text-[#4B5BEA] transition-colors stroke-[2]" />
-                    <span>More ways</span>
-                  </button>
-                </div>
-
-                {/* Popover for "More ways" */}
-                <AnimatePresence>
-                  {showMoreWays && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.96, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96, y: -6 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute left-1/2 -translate-x-1/2 mt-2.5 w-60 bg-white border border-[#E5E7EB] rounded-2xl shadow-xl p-2 z-50 text-left"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSourceModal('youtube')}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-[#F3F4F6] text-sm text-[#111827] font-medium transition-colors cursor-pointer"
-                      >
-                        <Youtube className="w-4 h-4 text-[#EF4444]" />
-                        <span>YouTube Video</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSourceModal('camera')}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-[#F3F4F6] text-sm text-[#111827] font-medium transition-colors cursor-pointer"
-                      >
-                        <Camera className="w-4 h-4 text-[#4B5BEA]" />
-                        <span>Scan / Capture Note</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSourceModal('voice')}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-[#F3F4F6] text-sm text-[#111827] font-medium transition-colors cursor-pointer"
-                      >
-                        <Mic className="w-4 h-4 text-[#10B981]" />
-                        <span>Voice Lecture</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowMoreWays(false);
-                          info('Connectors', 'Google Drive, Notion, and Canvas LMS connectors enabled.');
-                        }}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-[#F3F4F6] text-sm text-[#111827] font-medium transition-colors cursor-pointer"
-                      >
-                        <Plug className="w-4 h-4 text-[#6366F1]" />
-                        <span>Cloud Connectors</span>
-                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
+            </div>
+          </div>
+        ) : (
+          /* ---------------- COLLAPSED RAIL (72px) ---------------- */
+          <div className="flex flex-col h-full w-full justify-between items-center overflow-hidden">
+            {/* Top section */}
+            <div className="flex flex-col items-center gap-5 w-full">
+              {/* Logo Mark & Reopen */}
+              <div className="flex flex-col items-center gap-3 w-full">
+                <div
+                  className="cursor-pointer py-1 flex items-center justify-center"
+                  onClick={() => setActiveNav('home')}
+                  title="NOEVIS AI Home"
+                >
+                  <Logo size="xs" variant="mark" showBadge={false} />
+                </div>
 
-              {/* 4. SHOW THE MAGIC: "WHAT CAN YOU LEARN WITH NOEVIS?" */}
-              <div className="w-full mt-12 sm:mt-14 pt-8 border-t border-[#E5E7EB]/80 flex flex-col items-center">
-                <span className="text-[11.5px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-[#667085] mb-4 sm:mb-5">
-                  What can you learn with Noevis?
-                </span>
+                {/* Expand Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                  title="Expand navigation"
+                  aria-label="Expand navigation"
+                >
+                  <PanelLeftOpen className="w-5 h-5 stroke-[1.9] text-[#111111]" />
+                </button>
+              </div>
 
-                {/* Four Refined Lightweight Capability Cards */}
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-left">
-                  {/* Capability 1: Understand */}
-                  <div className="p-4 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#DCE1FD] hover:shadow-2xs transition-all flex flex-col justify-between group">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#EEF0FF] flex items-center justify-center text-[#4B5BEA]">
-                        <Brain className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-[#111827]">Understand</h3>
-                    </div>
-                    <p className="text-xs text-[#667085] leading-relaxed">
-                      Learn concepts clearly with adaptive explanations.
-                    </p>
-                  </div>
-
-                  {/* Capability 2: Practice */}
-                  <div className="p-4 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#A7F3D0] hover:shadow-2xs transition-all flex flex-col justify-between group">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#ECFDF5] flex items-center justify-center text-[#10B981]">
-                        <Target className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-[#111827]">Practice</h3>
-                    </div>
-                    <p className="text-xs text-[#667085] leading-relaxed">
-                      Test and strengthen your understanding with quiz loops.
-                    </p>
-                  </div>
-
-                  {/* Capability 3: Visualize */}
-                  <div className="p-4 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#C7D2FE] hover:shadow-2xs transition-all flex flex-col justify-between group">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] flex items-center justify-center text-[#6366F1]">
-                        <Eye className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-[#111827]">Visualize</h3>
-                    </div>
-                    <p className="text-xs text-[#667085] leading-relaxed">
-                      Turn difficult ideas into visual knowledge graphs.
-                    </p>
-                  </div>
-
-                  {/* Capability 4: Remember */}
-                  <div className="p-4 rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#FDE68A] hover:shadow-2xs transition-all flex flex-col justify-between group">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#FFFBEB] flex items-center justify-center text-[#F59E0B]">
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-[#111827]">Remember</h3>
-                    </div>
-                    <p className="text-xs text-[#667085] leading-relaxed">
-                      Build recall with spaced revision and flashcard activities.
-                    </p>
-                  </div>
+              {/* Start Learning (Plus Only) */}
+              <div className="relative group w-full flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleUniversalStartLearningClick}
+                  className="w-11 h-11 bg-[#FFFFFF] hover:bg-[#F5F5F5] active:bg-[#EFEFEF] border border-[#E5E7EB] rounded-[12px] flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Start learning"
+                >
+                  <Plus className="w-5 h-5 stroke-[2.2] text-[#111111]" />
+                </button>
+                {/* Premium Tooltip */}
+                <div className="pointer-events-none absolute left-[56px] top-2.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-[#E5E7EB] text-[#111111] text-xs font-semibold px-2.5 py-1 rounded-[8px] whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,0.06)] z-50">
+                  Start learning
                 </div>
               </div>
 
-              {/* 5. MY CANVASES SECTION (NEW USER EMPTY STATE OR REAL CARDS) */}
-              <div className="w-full mt-10 sm:mt-12 text-left">
-                <div className="flex items-center justify-between mb-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <h3 className="text-base sm:text-lg font-bold text-[#111827]">
-                      My Canvases
-                    </h3>
-                    {canvases.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#EAECEF] text-xs font-semibold text-[#4B5563]">
-                        {canvases.length}
-                      </span>
-                    )}
-                  </div>
+              {/* Main Navigation Icons */}
+              <nav aria-label="Rail Main Navigation" className="flex flex-col gap-1.5 w-full items-center">
+                {mainNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeNav === item.id;
 
-                  <div className="flex items-center gap-2">
-                    {canvases.length === 0 ? (
+                  return (
+                    <div key={item.id} className="relative group w-full flex justify-center">
                       <button
                         type="button"
-                        onClick={handleAddSampleCanvas}
-                        className="text-xs font-medium text-[#667085] hover:text-[#111827] underline underline-offset-2 transition-colors cursor-pointer"
+                        onClick={() => handleNavClick(item.id)}
+                        className={`w-11 h-11 rounded-[12px] flex items-center justify-center transition-colors cursor-pointer ${
+                          isActive
+                            ? 'bg-[#F1F1F1] text-[#111111]'
+                            : 'text-[#111111] hover:bg-[#F5F5F5]'
+                        }`}
+                        aria-label={item.label}
                       >
-                        Preview Canvas Card
+                        <Icon className="w-5 h-5 stroke-[1.8] text-[#111111]" />
                       </button>
-                    ) : (
+                      {/* Premium Tooltip */}
+                      <div className="pointer-events-none absolute left-[56px] top-2.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-[#E5E7EB] text-[#111111] text-xs font-semibold px-2.5 py-1 rounded-[8px] whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,0.06)] z-50">
+                        {item.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Bottom section */}
+            <div className="flex flex-col items-center gap-4 w-full">
+              {/* System Navigation Icons */}
+              <nav aria-label="Rail System Navigation" className="flex flex-col gap-1.5 w-full items-center">
+                {systemNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeNav === item.id;
+
+                  return (
+                    <div key={item.id} className="relative group w-full flex justify-center">
                       <button
                         type="button"
-                        onClick={() => setActiveNav('canvases')}
-                        className="text-xs font-semibold text-[#4B5BEA] hover:text-[#3B49C8] flex items-center gap-1 transition-colors cursor-pointer"
+                        onClick={() => handleNavClick(item.id)}
+                        className={`w-11 h-11 rounded-[12px] flex items-center justify-center transition-colors cursor-pointer ${
+                          isActive
+                            ? 'bg-[#F1F1F1] text-[#111111]'
+                            : 'text-[#111111] hover:bg-[#F5F5F5]'
+                        }`}
+                        aria-label={item.label}
                       >
-                        <span>View all</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        <Icon className="w-5 h-5 stroke-[1.8] text-[#111111]" />
                       </button>
-                    )}
-                  </div>
+                      {/* Premium Tooltip */}
+                      <div className="pointer-events-none absolute left-[56px] top-2.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-[#E5E7EB] text-[#111111] text-xs font-semibold px-2.5 py-1 rounded-[8px] whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,0.06)] z-50">
+                        {item.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </nav>
+
+              {/* Profile Avatar */}
+              <div className="relative flex justify-center pb-1">
+                <div
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="w-10 h-10 rounded-full bg-[#111111] text-white text-[12px] font-bold flex items-center justify-center shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
+                  title={userName}
+                >
+                  {userInitials}
                 </div>
 
-                {/* If user has zero canvases: SHOW BEAUTIFUL NEW-USER EMPTY STATE */}
-                {canvases.length === 0 ? (
-                  <div
-                    id="new-user-empty-state"
-                    className="w-full p-6 sm:p-8 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[18px] flex flex-col sm:flex-row items-center justify-between gap-5 shadow-2xs"
-                  >
-                    <div className="text-center sm:text-left">
-                      <h4 className="text-[15px] sm:text-base font-bold text-[#111827]">
-                        Your learning spaces will appear here.
-                      </h4>
-                      <p className="text-xs sm:text-sm text-[#667085] mt-1 leading-relaxed">
-                        Start with a file, text, or link and Noevis will prepare your first Canvas.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      id="empty-state-start-canvas-btn"
-                      onClick={() => handleOpenSourceModal('upload')}
-                      className="h-[42px] px-5 rounded-[12px] bg-[#F7F8FA] hover:bg-[#EEF0FF] border border-[#E5E7EB] hover:border-[#DCE1FD] text-xs sm:text-sm font-semibold text-[#111827] hover:text-[#4B5BEA] flex items-center gap-2 transition-all cursor-pointer shrink-0"
+                {/* Collapsed Profile Popover */}
+                <AnimatePresence>
+                  {showProfileMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.97, x: 10 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.97, x: 10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute bottom-0 left-[56px] w-[220px] bg-white border border-[#E5E7EB] rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-2.5 text-left flex flex-col gap-1 z-50"
                     >
-                      <span>Start your first Canvas</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  /* If user has Canvases: LARGE PREMIUM CANVAS CARDS */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {canvases.map((canvas) => (
-                      <div
-                        key={canvas.id}
-                        onClick={() => onStartCanvas(canvas.sourceType)}
-                        className="p-5 rounded-[18px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#CBD5E1] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#4B5BEA] bg-[#EEF0FF] px-2.5 py-0.5 rounded-full border border-[#DCE1FD]">
-                              {canvas.sourceType.toUpperCase()} SOURCE
-                            </span>
-                            <span className="text-xs text-[#9CA3AF] flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {canvas.updatedAt}
-                            </span>
-                          </div>
-
-                          <h4 className="text-base font-bold text-[#111827] group-hover:text-[#4B5BEA] transition-colors mb-1.5 line-clamp-1">
-                            {canvas.title}
-                          </h4>
-
-                          <p className="text-xs text-[#667085] flex items-center gap-1.5 truncate mb-4">
-                            <FileCode className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                            <span className="truncate">{canvas.sourceName}</span>
-                          </p>
-                        </div>
-
-                        <div className="pt-3 border-t border-[#F3F4F6] flex items-center justify-between text-xs text-[#667085]">
-                          <span className="font-medium">
-                            {canvas.elementsCount.explanations} Explanations • {canvas.elementsCount.questions} MCQs
-                          </span>
-                          <span className="font-semibold text-[#111827] flex items-center gap-1 group-hover:text-[#4B5BEA] group-hover:translate-x-0.5 transition-all">
-                            Open <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
-                        </div>
+                      <div className="px-2 py-1.5 border-b border-[#E5E7EB] text-xs text-[#6B7280]">
+                        <p className="font-semibold text-[#111111] text-[13px]">{userName}</p>
+                        <p className="text-[11px] mt-0.5">{userEmail}</p>
                       </div>
-                    ))}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          setActiveNav('settings');
+                        }}
+                        className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-[#6B7280]" />
+                        <span>Manage Settings</span>
+                      </button>
+
+                      {onResetOnboarding && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            onResetOnboarding();
+                          }}
+                          className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
+                          <span>Reset Onboarding</span>
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* ================================================== */}
+      {/* 2. MAIN CONTENT VIEWPORT CONTAINER                 */}
+      {/* ================================================== */}
+      <div
+        className={`flex-1 min-h-[100dvh] flex flex-col justify-between w-full transition-all duration-200 ease-out ${
+          isSidebarOpen ? 'lg:pl-[280px] lg:blur-[2px] lg:opacity-[0.88]' : 'lg:pl-[72px] lg:blur-0 lg:opacity-100'
+        }`}
+      >
+        {/* TOP HEADER AREA (NO full-width divider line across page) */}
+        <header className="w-full max-w-[1240px] mx-auto px-6 sm:px-10 lg:px-12 pt-6 pb-2 flex items-center justify-between shrink-0 z-20">
+          {/* Left: Mobile hamburger */}
+          <div className="flex items-center gap-3">
+            {/* Mobile hamburger button */}
+            <button
+              type="button"
+              onClick={() => setShowMobileDrawer(true)}
+              className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5 stroke-[2]" />
+            </button>
+
+            {/* Mobile Logo */}
+            <div className="lg:hidden">
+              <Logo size="xs" variant="full" showBadge={false} />
+            </div>
+          </div>
+
+          {/* Right: Search input & Avatar */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Search Input (280-340px desktop, 46-50px height) */}
+            <div className="relative">
+              <div className="flex items-center w-[200px] sm:w-[260px] md:w-[300px] lg:w-[320px] h-[46px] px-3.5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[14px] text-sm focus-within:border-[#111111] transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                <Search className="w-4 h-4 text-[#9CA3AF] mr-2.5 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      handleProcessAndLaunch('paste', searchQuery.trim());
+                    }
+                  }}
+                  placeholder="Search anything..."
+                  className="w-full bg-transparent text-xs sm:text-[13.5px] text-[#111111] placeholder:text-[#9CA3AF] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* User Avatar Circle */}
+            <div
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-1.5 cursor-pointer hover:opacity-85 transition-opacity"
+            >
+              <div className="w-9 h-9 rounded-full bg-[#111111] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                {userInitials}
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-[#111111]" />
+            </div>
+          </div>
+        </header>
+
+        {/* ================================================== */}
+        {/* MAIN BODY AREA — HOME VIEW                         */}
+        {/* ================================================== */}
+        <main className="w-full flex-1 flex flex-col items-center px-6 sm:px-10 lg:px-12 py-6 sm:py-8 my-auto">
+          {/* TAB: HOME VIEW */}
+          {activeNav === 'home' && (
+            <motion.div
+              key="home-tab-content"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={transitionConfig}
+              className="w-full max-w-[840px] flex flex-col items-start text-left"
+            >
+              {/* 1. HERO SECTION (Spacious, deliberate desktop rhythm) */}
+              <div className="mt-8 sm:mt-12 lg:mt-14 mb-8 sm:mb-10 text-left">
+                <h1
+                  id="home-hero-headline"
+                  className="text-[34px] sm:text-[44px] md:text-[50px] lg:text-[54px] font-bold text-[#111111] tracking-[-0.035em] leading-[1.08] mb-3"
+                >
+                  Ready when you are.
+                </h1>
+
+                <p
+                  id="home-hero-subheading"
+                  className="text-[15.5px] sm:text-[17px] md:text-[18px] font-normal text-[#6B7280] tracking-[-0.01em] leading-[1.4]"
+                >
+                  Start with something you’re learning.
+                </p>
+              </div>
+
+              {/* 2. PRIMARY START LEARNING CARD (LARGE HORIZONTAL ROUNDED CARD) */}
+              <div
+                id="start-learning-card"
+                onClick={handleUniversalStartLearningClick}
+                className="group w-full min-h-[190px] sm:min-h-[200px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#D1D5DB] hover:bg-[#F7F7F7] rounded-[24px] p-7 sm:p-9 transition-all duration-200 ease-out cursor-pointer flex items-center justify-between text-left shadow-[0_2px_12px_rgba(0,0,0,0.02)] select-none"
+              >
+                {/* Left: Large subtle plus circle (88-104px diameter) */}
+                <div className="w-[88px] h-[88px] sm:w-[98px] sm:h-[98px] rounded-full border border-dashed border-[#CBD5E1] bg-white flex items-center justify-center shrink-0 transition-colors">
+                  <Plus className="w-8 h-8 text-[#111111] stroke-[1.6]" />
+                </div>
+
+                {/* Center: Title & Supporting Copy */}
+                <div className="flex-1 px-6 sm:px-8">
+                  <h2 className="text-[22px] sm:text-[26px] font-bold text-[#111111] tracking-[-0.025em] leading-tight mb-1.5">
+                    Start learning
+                  </h2>
+                  <p className="text-[15px] sm:text-[16.5px] font-normal text-[#6B7280] leading-[1.4] tracking-[-0.01em]">
+                    Bring something you’re learning.
+                  </p>
+                </div>
+
+                {/* Right: Circular outline with right arrow (52-60px) */}
+                <div className="w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full border border-[#E5E7EB] bg-white group-hover:border-[#CBD5E1] flex items-center justify-center shrink-0 text-[#111111] transition-colors">
+                  <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.8] group-hover:translate-x-1 transition-transform duration-200" />
+                </div>
+              </div>
+
+              {/* 3. SOURCE ACTIONS ROW (LIGHTWEIGHT UTILITY ROW) */}
+              <div className="w-full mt-6 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[20px] p-2.5 sm:p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between divide-y sm:divide-y-0 sm:divide-x divide-[#E5E7EB] shadow-[0_1px_3px_rgba(0,0,0,0.01)]">
+                {/* Action 1: Upload (Direct File Picker) */}
+                <button
+                  type="button"
+                  id="source-action-upload"
+                  onClick={handleDirectUploadClick}
+                  className="flex-1 flex items-center gap-3.5 p-3.5 sm:p-4 rounded-[14px] hover:bg-[#F5F5F5] transition-colors cursor-pointer text-left group"
+                >
+                  <FileText className="w-5 h-5 text-[#111111] stroke-[1.8] shrink-0" />
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#111111] leading-tight">
+                      Upload
+                    </h3>
+                    <p className="text-[12px] text-[#6B7280] mt-0.5 leading-tight">
+                      File, audio, video
+                    </p>
                   </div>
-                )}
+                </button>
+
+                {/* Action 2: Paste (Direct Text Input) */}
+                <button
+                  type="button"
+                  id="source-action-paste"
+                  onClick={handleDirectPasteClick}
+                  className="flex-1 flex items-center gap-3.5 p-3.5 sm:p-4 rounded-[14px] hover:bg-[#F5F5F5] transition-colors cursor-pointer text-left group"
+                >
+                  <Clipboard className="w-5 h-5 text-[#111111] stroke-[1.8] shrink-0" />
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#111111] leading-tight">
+                      Paste
+                    </h3>
+                    <p className="text-[12px] text-[#6B7280] mt-0.5 leading-tight">
+                      Text or content
+                    </p>
+                  </div>
+                </button>
+
+                {/* Action 3: Link (Direct URL Input) */}
+                <button
+                  type="button"
+                  id="source-action-link"
+                  onClick={handleDirectLinkClick}
+                  className="flex-1 flex items-center gap-3.5 p-3.5 sm:p-4 rounded-[14px] hover:bg-[#F5F5F5] transition-colors cursor-pointer text-left group"
+                >
+                  <LinkIcon className="w-5 h-5 text-[#111111] stroke-[1.8] shrink-0" />
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#111111] leading-tight">
+                      Link
+                    </h3>
+                    <p className="text-[12px] text-[#6B7280] mt-0.5 leading-tight">
+                      YouTube, website or any link
+                    </p>
+                  </div>
+                </button>
+
+                {/* Action 4: More (Remaining Sources) */}
+                <button
+                  type="button"
+                  id="source-action-more"
+                  onClick={handleDirectMoreClick}
+                  className="flex-1 flex items-center gap-3.5 p-3.5 sm:p-4 rounded-[14px] hover:bg-[#F5F5F5] transition-colors cursor-pointer text-left group"
+                >
+                  <MoreHorizontal className="w-5 h-5 text-[#111111] stroke-[1.8] shrink-0" />
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#111111] leading-tight">
+                      More
+                    </h3>
+                    <p className="text-[12px] text-[#6B7280] mt-0.5 leading-tight">
+                      YouTube, scan, voice & more
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {/* 4. MY CANVASES SECTION */}
+              <div className="w-full mt-12 sm:mt-14 text-left">
+                {/* Section Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[20px] sm:text-[22px] font-bold text-[#111111] tracking-[-0.02em]">
+                    My Canvases
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveNav('canvases')}
+                    className="text-[13.5px] font-medium text-[#111111] hover:underline flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <span>View all</span>
+                    <ArrowRight className="w-3.5 h-3.5 stroke-[2]" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Premium Dashed Creation Card */}
+                  <div
+                    onClick={handleUniversalStartLearningClick}
+                    className="p-5 min-h-[160px] rounded-[20px] bg-[#FFFFFF] border border-dashed border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9F9] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group"
+                  >
+                    <Plus className="w-5 h-5 text-[#6B7280] group-hover:text-[#111111] group-hover:scale-110 transition-transform stroke-[2] mb-3" />
+                    <h4 className="text-[15px] font-bold text-[#111111] mb-1">New Canvas</h4>
+                    <p className="text-xs text-[#6B7280]">Create your first learning Canvas</p>
+                  </div>
+
+                  {canvases.map((canvas) => (
+                    <div
+                      key={canvas.id}
+                      onClick={() => onStartCanvas(canvas.sourceType)}
+                      className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#D1D5DB] hover:bg-[#F7F7F7] transition-all duration-150 cursor-pointer flex flex-col justify-between group"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280] bg-[#F1F1F1] px-2.5 py-0.5 rounded-full">
+                            {canvas.sourceType}
+                          </span>
+                          <span className="text-xs text-[#9CA3AF] flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {canvas.updatedAt}
+                          </span>
+                        </div>
+
+                        <h4 className="text-[15px] font-bold text-[#111111] mb-1 line-clamp-1">
+                          {canvas.title}
+                        </h4>
+
+                        <p className="text-xs text-[#6B7280] flex items-center gap-1.5 truncate mb-3">
+                          <FileCode className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                          <span className="truncate">{canvas.sourceName}</span>
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#6B7280]">
+                        <span>
+                          {canvas.elementsCount.explanations} Explanations • {canvas.elementsCount.questions} Questions
+                        </span>
+                        <span className="font-semibold text-[#111111] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                          Open <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </motion.div>
           )}
 
-          {/* ------------------------------------------------ */}
-          {/* TAB 2: MY CANVASES DEDICATED VIEW                */}
-          {/* ------------------------------------------------ */}
+          {/* TAB: MY CANVASES */}
           {activeNav === 'canvases' && (
             <motion.div
               key="canvases-tab-content"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={transitionConfig}
-              className="w-full max-w-[800px] flex flex-col text-left"
+              className="w-full max-w-[840px] flex flex-col text-left"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-[#E5E7EB]">
+              <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB] mb-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-                    My Canvases
-                  </h1>
-                  <p className="text-sm text-[#667085] mt-0.5">
-                    Your generated learning spaces, concept maps, and practice sessions.
-                  </p>
+                  <h1 className="text-2xl font-bold text-[#111111]">My Canvases</h1>
+                  <p className="text-sm text-[#6B7280] mt-0.5">Your generated learning workspaces</p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={handleStartLearningClick}
-                  className="h-[42px] px-4 rounded-xl bg-[#111827] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 hover:bg-[#1F2937] transition-colors cursor-pointer self-start sm:self-auto"
+                  onClick={handleUniversalStartLearningClick}
+                  className="h-10 px-4 rounded-[12px] bg-[#FFFFFF] border border-[#E5E7EB] hover:bg-[#F5F5F5] text-xs sm:text-sm font-semibold text-[#111111] flex items-center gap-2 cursor-pointer transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>New Canvas</span>
                 </button>
               </div>
 
-              {canvases.length === 0 ? (
-                <div className="w-full p-10 bg-white border border-[#E5E7EB] rounded-2xl flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-full bg-[#EEF0FF] flex items-center justify-center text-[#4B5BEA] mb-3">
-                    <Layers className="w-7 h-7" />
-                  </div>
-                  <h3 className="text-lg font-bold text-[#111827]">No Canvases Created Yet</h3>
-                  <p className="text-sm text-[#667085] max-w-sm mt-1 mb-6 leading-relaxed">
-                    Upload a lecture PDF, paste raw notes, or link an article to create your first adaptive workspace.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenSourceModal('upload')}
-                    className="px-5 py-2.5 rounded-xl bg-[#111827] text-white text-sm font-semibold hover:bg-[#1F2937] transition-colors cursor-pointer flex items-center gap-2"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Learning Source</span>
-                  </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Premium Dashed Creation Card */}
+                <div
+                  onClick={handleUniversalStartLearningClick}
+                  className="p-5 min-h-[160px] rounded-[20px] bg-[#FFFFFF] border border-dashed border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9F9] transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group"
+                >
+                  <Plus className="w-5 h-5 text-[#6B7280] group-hover:text-[#111111] group-hover:scale-110 transition-transform stroke-[2] mb-3" />
+                  <h4 className="text-[15px] font-bold text-[#111111] mb-1">New Canvas</h4>
+                  <p className="text-xs text-[#6B7280]">Create your first learning Canvas</p>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {canvases.map((canvas) => (
-                    <div
-                      key={canvas.id}
-                      onClick={() => onStartCanvas(canvas.sourceType)}
-                      className="p-5 rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#CBD5E1] hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs font-semibold text-[#4B5BEA] bg-[#EEF0FF] px-2.5 py-0.5 rounded-full border border-[#DCE1FD]">
-                            {canvas.sourceType.toUpperCase()}
-                          </span>
-                          <span className="text-xs text-[#9CA3AF]">{canvas.updatedAt}</span>
-                        </div>
-                        <h3 className="text-base font-bold text-[#111827] group-hover:text-[#4B5BEA] transition-colors mb-1">
-                          {canvas.title}
-                        </h3>
-                        <p className="text-xs text-[#667085]">{canvas.sourceName}</p>
-                      </div>
 
-                      <div className="mt-5 pt-3 border-t border-[#F3F4F6] flex items-center justify-between text-xs text-[#667085]">
-                        <span>{canvas.elementsCount.explanations} Explanations • {canvas.elementsCount.questions} Questions</span>
-                        <span className="font-semibold text-[#111827] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                          Open Canvas →
-                        </span>
-                      </div>
+                {canvases.map((canvas) => (
+                  <div
+                    key={canvas.id}
+                    onClick={() => onStartCanvas(canvas.sourceType)}
+                    className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB] hover:bg-[#F7F7F7] transition-all cursor-pointer flex flex-col justify-between group"
+                  >
+                    <div>
+                      <span className="text-[11px] font-semibold text-[#6B7280] bg-[#F1F1F1] px-2.5 py-0.5 rounded-full">
+                        {canvas.sourceType}
+                      </span>
+                      <h4 className="text-base font-bold text-[#111111] mt-2 mb-1">{canvas.title}</h4>
+                      <p className="text-xs text-[#6B7280]">{canvas.sourceName}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="mt-4 pt-3 border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#6B7280]">
+                      <span>{canvas.elementsCount.explanations} Explanations</span>
+                      <span className="font-semibold text-[#111111] flex items-center gap-1">Open Canvas →</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           )}
 
-          {/* ------------------------------------------------ */}
-          {/* TAB 3: LIBRARY DEDICATED VIEW                    */}
-          {/* ------------------------------------------------ */}
+          {/* TAB: LIBRARY */}
           {activeNav === 'library' && (
             <motion.div
               key="library-tab-content"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={transitionConfig}
-              className="w-full max-w-[800px] flex flex-col text-left"
+              className="w-full max-w-[840px] flex flex-col text-left"
             >
-              <div className="mb-6 pb-4 border-b border-[#E5E7EB]">
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-                  Library
-                </h1>
-                <p className="text-sm text-[#667085] mt-0.5">
-                  Organized repository of summaries, flashcard decks, and revision sheets.
-                </p>
+              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
+                <h1 className="text-2xl font-bold text-[#111111]">Library</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Saved study cards, flashcard decks, and summaries</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-5 rounded-2xl bg-white border border-[#E5E7EB] hover:shadow-2xs transition-all">
-                  <div className="w-8 h-8 rounded-lg bg-[#EEF0FF] text-[#4B5BEA] flex items-center justify-center mb-3">
-                    <BookOpen className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-[#111827]">Adaptive Notes</h3>
-                  <p className="text-xs text-[#667085] mt-1">Generated structured notes from your uploaded materials.</p>
-                  <span className="inline-block mt-4 text-[11px] font-semibold text-[#9CA3AF]">0 Saved</span>
+                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
+                  <BookOpen className="w-5 h-5 text-[#111111] mb-3 stroke-[1.8]" />
+                  <h3 className="text-sm font-bold text-[#111111]">Structured Notes</h3>
+                  <p className="text-xs text-[#6B7280] mt-1">Organized conceptual summaries</p>
+                  <span className="inline-block mt-3 text-[11px] font-medium text-[#9CA3AF]">0 Saved</span>
                 </div>
-
-                <div className="p-5 rounded-2xl bg-white border border-[#E5E7EB] hover:shadow-2xs transition-all">
-                  <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] text-[#10B981] flex items-center justify-center mb-3">
-                    <Target className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-[#111827]">Flashcard Decks</h3>
-                  <p className="text-xs text-[#667085] mt-1">Spaced repetition decks ready for recall drills.</p>
-                  <span className="inline-block mt-4 text-[11px] font-semibold text-[#9CA3AF]">0 Decks</span>
+                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
+                  <Layers className="w-5 h-5 text-[#111111] mb-3 stroke-[1.8]" />
+                  <h3 className="text-sm font-bold text-[#111111]">Flashcard Decks</h3>
+                  <p className="text-xs text-[#6B7280] mt-1">Recall and quiz sets</p>
+                  <span className="inline-block mt-3 text-[11px] font-medium text-[#9CA3AF]">0 Decks</span>
                 </div>
-
-                <div className="p-5 rounded-2xl bg-white border border-[#E5E7EB] hover:shadow-2xs transition-all">
-                  <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center mb-3">
-                    <Eye className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-[#111827]">Visual Maps</h3>
-                  <p className="text-xs text-[#667085] mt-1">Connected concept graphs and relationship diagrams.</p>
-                  <span className="inline-block mt-4 text-[11px] font-semibold text-[#9CA3AF]">0 Maps</span>
+                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
+                  <Bookmark className="w-5 h-5 text-[#111111] mb-3 stroke-[1.8]" />
+                  <h3 className="text-sm font-bold text-[#111111]">Key Formulas</h3>
+                  <p className="text-xs text-[#6B7280] mt-1">Extracted rules and theorems</p>
+                  <span className="inline-block mt-3 text-[11px] font-medium text-[#9CA3AF]">0 Items</span>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* ------------------------------------------------ */}
-          {/* TAB 4: HISTORY DEDICATED VIEW                    */}
-          {/* ------------------------------------------------ */}
+          {/* TAB: HISTORY */}
           {activeNav === 'history' && (
             <motion.div
               key="history-tab-content"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={transitionConfig}
-              className="w-full max-w-[800px] flex flex-col text-left"
+              className="w-full max-w-[840px] flex flex-col text-left"
             >
-              <div className="mb-6 pb-4 border-b border-[#E5E7EB]">
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-                  Learning History
-                </h1>
-                <p className="text-sm text-[#667085] mt-0.5">
-                  Timeline of your interactions, practice evaluations, and study milestones.
-                </p>
+              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
+                <h1 className="text-2xl font-bold text-[#111111]">History</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Timeline of learning sessions and quiz completions</p>
               </div>
 
-              <div className="p-8 bg-white border border-[#E5E7EB] rounded-2xl flex flex-col items-center text-center">
-                <Clock className="w-8 h-8 text-[#9CA3AF] mb-2" />
-                <h3 className="text-sm font-semibold text-[#111827]">History will track your learning journey</h3>
-                <p className="text-xs text-[#667085] mt-1 max-w-sm">
-                  As you complete adaptive quizzes and review concept breakdowns, your chronological records will appear here.
+              <div className="p-8 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[20px] flex flex-col items-center text-center">
+                <Clock className="w-8 h-8 text-[#9CA3AF] mb-2 stroke-[1.5]" />
+                <h3 className="text-sm font-semibold text-[#111111]">No session history yet</h3>
+                <p className="text-xs text-[#6B7280] mt-1 max-w-sm">
+                  As you interact with learning canvases and practice quiz questions, your history will be recorded here.
                 </p>
               </div>
             </motion.div>
           )}
 
-          {/* ------------------------------------------------ */}
-          {/* TAB 5: SETTINGS DEDICATED VIEW                   */}
-          {/* ------------------------------------------------ */}
+          {/* TAB: SETTINGS */}
           {activeNav === 'settings' && (
             <motion.div
               key="settings-tab-content"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={transitionConfig}
-              className="w-full max-w-[800px] flex flex-col text-left"
+              className="w-full max-w-[840px] flex flex-col text-left"
             >
-              <div className="mb-6 pb-4 border-b border-[#E5E7EB]">
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-                  Settings & Preferences
-                </h1>
-                <p className="text-sm text-[#667085] mt-0.5">
-                  Calibrate your adaptive learning model and manage account details.
-                </p>
+              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
+                <h1 className="text-2xl font-bold text-[#111111]">Settings</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Manage learning model preferences and account context</p>
               </div>
 
-              <div className="flex flex-col gap-4">
-                <div className="p-6 bg-white border border-[#E5E7EB] rounded-2xl flex flex-col gap-4">
-                  <h3 className="text-sm font-bold text-[#111827]">Adaptive Profile Calibration</h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
-                      <span className="text-[#9CA3AF] block mb-1">Study Context</span>
-                      <span className="font-semibold text-[#111827]">{studyContext}</span>
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
-                      <span className="text-[#9CA3AF] block mb-1">Confidence Trajectory</span>
-                      <span className="font-semibold text-[#111827]">{confidence}</span>
-                    </div>
-                    <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
-                      <span className="text-[#9CA3AF] block mb-1">Target Age Cohort</span>
-                      <span className="font-semibold text-[#111827]">{ageGroup}</span>
-                    </div>
+              <div className="p-6 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[20px] flex flex-col gap-4">
+                <h3 className="text-sm font-bold text-[#111111]">Learning Context Calibration</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
+                    <span className="text-[#6B7280] block mb-1">Study Context</span>
+                    <span className="font-semibold text-[#111111]">{studyContext}</span>
                   </div>
-
-                  {onResetOnboarding && (
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={onResetOnboarding}
-                        className="px-4 py-2 rounded-xl bg-[#F7F8FA] hover:bg-[#EEF0FF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5BEA] transition-colors cursor-pointer flex items-center gap-2"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Re-run Onboarding Diagnostic</span>
-                      </button>
-                    </div>
-                  )}
+                  <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
+                    <span className="text-[#6B7280] block mb-1">Confidence</span>
+                    <span className="font-semibold text-[#111111]">{confidence}</span>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-[#F7F8FA] border border-[#E5E7EB]">
+                    <span className="text-[#6B7280] block mb-1">Age Cohort</span>
+                    <span className="font-semibold text-[#111111]">{ageGroup}</span>
+                  </div>
                 </div>
 
-                <div className="p-6 bg-white border border-[#E5E7EB] rounded-2xl flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-[#111827]">Account Information</h3>
-                    <p className="text-xs text-[#667085] mt-0.5">Signed in as {userEmail}</p>
+                {onResetOnboarding && (
+                  <div className="pt-3 border-t border-[#E5E7EB] flex items-center justify-between">
+                    <span className="text-xs text-[#6B7280]">Recalibrate adaptive persona</span>
+                    <button
+                      type="button"
+                      onClick={onResetOnboarding}
+                      className="px-3 py-1.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F5F5F5] text-xs font-semibold text-[#111111] transition-colors cursor-pointer"
+                    >
+                      Reset Onboarding
+                    </button>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-xs font-semibold text-[#10B981]">
-                    Active Learner
-                  </span>
-                </div>
+                )}
               </div>
             </motion.div>
           )}
 
-          {/* ------------------------------------------------ */}
-          {/* TAB 6: HELP DEDICATED VIEW                       */}
-          {/* ------------------------------------------------ */}
+          {/* TAB: HELP */}
           {activeNav === 'help' && (
             <motion.div
               key="help-tab-content"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={transitionConfig}
-              className="w-full max-w-[800px] flex flex-col text-left"
+              className="w-full max-w-[840px] flex flex-col text-left"
             >
-              <div className="mb-6 pb-4 border-b border-[#E5E7EB]">
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-                  Help & Documentation
-                </h1>
-                <p className="text-sm text-[#667085] mt-0.5">
-                  Guides on bringing sources, adaptive Canvas tools, and keyboard shortcuts.
-                </p>
+              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
+                <h1 className="text-2xl font-bold text-[#111111]">Help & Documentation</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">How to get the most out of Noevis AI</p>
               </div>
 
               <div className="flex flex-col gap-3">
-                <div className="p-5 bg-white border border-[#E5E7EB] rounded-2xl">
-                  <h3 className="text-sm font-bold text-[#111827] mb-1">How does source ingestion work?</h3>
-                  <p className="text-xs text-[#667085] leading-relaxed">
-                    Upload any PDF, textbook chapter, lecture slide, or raw transcript. Noevis extracts core concepts, creates prerequisite relationships, and drafts interactive diagnostic questions automatically.
+                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
+                  <h3 className="text-sm font-bold text-[#111111] mb-1">How does the Canvas work?</h3>
+                  <p className="text-xs text-[#6B7280] leading-relaxed">
+                    When you bring a document, video, or pasted text, Noevis extracts core learning concepts, builds step-by-step explanations, creates interactive quizzes, and generates visual diagrams.
                   </p>
                 </div>
-
-                <div className="p-5 bg-white border border-[#E5E7EB] rounded-2xl">
-                  <h3 className="text-sm font-bold text-[#111827] mb-1">What is an adaptive Canvas?</h3>
-                  <p className="text-xs text-[#667085] leading-relaxed">
-                    A Canvas is your personal learning environment. Unlike standard static chat, it pairs step-by-step explanations with dynamic difficulty adjustments that respond in real-time to your quiz performance.
+                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
+                  <h3 className="text-sm font-bold text-[#111111] mb-1">Supported file formats</h3>
+                  <p className="text-xs text-[#6B7280] leading-relaxed">
+                    PDF, DOCX, PPTX, MP3, MP4, WAV, YouTube video links, web URLs, and direct text paste.
                   </p>
                 </div>
               </div>
             </motion.div>
           )}
         </main>
-
-        {/* FOOTER */}
-        <footer className="w-full pb-6 px-5 shrink-0" aria-hidden="true" />
       </div>
 
       {/* ================================================== */}
-      {/* 3. INTERACTIVE SOURCE ENTRY MODALS                 */}
+      {/* 3. UNIVERSAL SOURCE SELECTION MODALS               */}
       {/* ================================================== */}
       <AnimatePresence>
         {activeSourceModal && (
@@ -1053,232 +1337,711 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4"
-            onClick={() => setActiveSourceModal(null)}
+            style={{ backgroundColor: 'rgba(20, 24, 30, 0.32)' }}
+            className="fixed inset-0 backdrop-blur-[8px] z-50 flex items-center justify-center p-4 sm:p-6"
+            onClick={(e) => {
+              // Click outside check
+              if (e.target === e.currentTarget) {
+                handleTryCloseModal();
+              }
+            }}
           >
             <motion.div
-              initial={{ scale: 0.96, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.96, opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
-              className="bg-white rounded-[22px] max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-[#E5E7EB] text-left relative"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 15 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                maxWidth:
+                  isAnalyzing || showSuccessState
+                    ? '480px'
+                    : activeSourceModal === 'all' || activeSourceModal === 'more'
+                    ? '780px'
+                    : activeSourceModal === 'record'
+                    ? '560px'
+                    : '640px',
+                maxHeight:
+                  activeSourceModal === 'all' || activeSourceModal === 'more'
+                    ? '78vh'
+                    : '72vh'
+              }}
+              className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.06)] overflow-hidden text-left flex flex-col relative"
             >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-[#E5E7EB]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#EEF0FF] text-[#4B5BEA] flex items-center justify-center">
-                    {activeSourceModal === 'upload' && <Upload className="w-4 h-4" />}
-                    {activeSourceModal === 'paste' && <FileText className="w-4 h-4" />}
-                    {activeSourceModal === 'link' && <LinkIcon className="w-4 h-4" />}
-                    {activeSourceModal === 'youtube' && <Youtube className="w-4 h-4 text-[#EF4444]" />}
-                    {activeSourceModal === 'camera' && <Camera className="w-4 h-4" />}
-                    {activeSourceModal === 'voice' && <Mic className="w-4 h-4 text-[#10B981]" />}
-                  </div>
+              {/* Header block (Not shown if in success or analyzing states) */}
+              {!isAnalyzing && !showSuccessState && (
+                <div className="px-6 md:px-8 pt-6 md:pt-7 pb-3 flex items-start justify-between gap-4 shrink-0">
                   <div>
-                    <h3 className="text-base font-bold text-[#111827] capitalize">
-                      {activeSourceModal === 'upload' && 'Upload Learning File'}
-                      {activeSourceModal === 'paste' && 'Paste Study Material'}
-                      {activeSourceModal === 'link' && 'Add Article or Doc Link'}
-                      {activeSourceModal === 'youtube' && 'Add YouTube Lecture'}
-                      {activeSourceModal === 'camera' && 'Scan Handwritten Notes'}
-                      {activeSourceModal === 'voice' && 'Record Voice Lecture'}
+                    <h3 className="text-xl md:text-2xl font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+                      {activeSourceModal === 'all' || activeSourceModal === 'more'
+                        ? 'Choose a learning source'
+                        : activeSourceModal === 'upload'
+                        ? 'Upload File'
+                        : activeSourceModal === 'paste'
+                        ? 'Paste study notes or text'
+                        : activeSourceModal === 'link'
+                        ? 'Web Link'
+                        : activeSourceModal === 'youtube'
+                        ? 'YouTube Lecture'
+                        : activeSourceModal === 'camera'
+                        ? 'Scan / Photo'
+                        : activeSourceModal === 'voice'
+                        ? 'Voice Lecture'
+                        : activeSourceModal === 'record'
+                        ? 'Record Lecture'
+                        : 'Learning Source'}
                     </h3>
-                    <p className="text-xs text-[#667085]">
-                      Noevis will analyze this source and build your Canvas.
+                    <p className="text-xs md:text-[13px] text-[#6B7280] mt-1 leading-normal">
+                      {activeSourceModal === 'all' || activeSourceModal === 'more'
+                        ? 'Noevis will analyze your material and generate an adaptive Canvas.'
+                        : activeSourceModal === 'upload'
+                        ? 'Select or drag study materials to start learning.'
+                        : activeSourceModal === 'paste'
+                        ? 'Bring your study excerpts, transcripts, or notes.'
+                        : activeSourceModal === 'link'
+                        ? 'Add website articles, web links, or learning resources.'
+                        : activeSourceModal === 'youtube'
+                        ? 'Turn a lecture into an adaptive Canvas.'
+                        : activeSourceModal === 'camera'
+                        ? 'Capture notes, pages or whiteboards.'
+                        : activeSourceModal === 'voice'
+                        ? 'Audio transcription and key concepts.'
+                        : activeSourceModal === 'record'
+                        ? 'Capture and transcribe spoken lectures or browser audio.'
+                        : 'Noevis will process and create your adaptive Workspace.'}
                     </p>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleTryCloseModal}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#9CA3AF] hover:text-[#111111] hover:bg-[#F5F5F5] transition-all cursor-pointer shrink-0"
+                    title="Close selection"
+                    aria-label="Close learning source panel"
+                  >
+                    <X className="w-4 h-4 stroke-[2.2]" />
+                  </button>
                 </div>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => setActiveSourceModal(null)}
-                  className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              {/* Scrollable Container Body */}
+              <div className="flex-1 overflow-y-auto px-6 md:px-8 pb-6 md:pb-7 pt-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                
+                {/* 1. ANALYZING / PROCESSING VIEW */}
+                {isAnalyzing && (
+                  <div className="py-10 flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+                    <div className="w-14 h-14 rounded-full bg-[#F7F8FA] flex items-center justify-center text-[#111111] mb-5 animate-pulse">
+                      <Sparkle className="w-6 h-6 stroke-[1.2]" />
+                    </div>
+                    
+                    <h4 className="text-base md:text-lg font-bold text-[#111111] mb-1.5 tracking-tight">
+                      Analyzing your material
+                    </h4>
+                    
+                    <p className="text-xs text-[#6B7280] mb-6 leading-relaxed">
+                      {analysisProgress < 50
+                        ? 'Extracting core learning concepts and outlines...'
+                        : analysisProgress < 90
+                        ? 'Building your adaptive Canvas explanations and quizzes...'
+                        : 'Finalizing your cognitive study environment...'}
+                    </p>
 
-              {/* Modal Body Based on Type */}
-              <div className="py-5">
-                {/* 1. UPLOAD FILE */}
-                {activeSourceModal === 'upload' && (
-                  <div className="flex flex-col gap-4">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.docx,.txt,.epub,.pptx"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-[#D1D5DB] hover:border-[#4B5BEA] bg-[#F9FAFB] hover:bg-[#EEF0FF]/30 rounded-2xl p-8 flex flex-col items-center text-center cursor-pointer transition-colors"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-[#FFFFFF] border border-[#E5E7EB] flex items-center justify-center text-[#4B5BEA] shadow-2xs mb-3">
-                        <Upload className="w-6 h-6" />
-                      </div>
-                      <p className="text-sm font-semibold text-[#111827]">
-                        Click to select or drag and drop a file
-                      </p>
-                      <p className="text-xs text-[#667085] mt-1">
-                        PDF, DOCX, TXT, EPUB, or PPTX up to 50MB
+                    {/* Progress Indicator */}
+                    <div className="w-full bg-[#E5E7EB] h-1 rounded-full overflow-hidden mb-3">
+                      <div
+                        className="bg-[#111111] h-full transition-all duration-300 ease-out"
+                        style={{ width: `${analysisProgress}%` }}
+                      />
+                    </div>
+                    
+                    <span className="text-xs font-semibold text-[#111111]">
+                      {analysisProgress}% Complete
+                    </span>
+                  </div>
+                )}
+
+                {/* 2. SUCCESS VIEW */}
+                {showSuccessState && (
+                  <div className="py-10 flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+                    <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5 scale-110">
+                      <Check className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+
+                    <h4 className="text-lg md:text-xl font-bold text-[#111111] mb-1.5 tracking-tight">
+                      Canvas ready
+                    </h4>
+                    
+                    <p className="text-xs text-[#6B7280] mb-4 leading-relaxed">
+                      We have successfully constructed your adaptive workspace:
+                    </p>
+
+                    {/* Meta Card */}
+                    <div className="w-full bg-[#F7F8FA] border border-[#E5E7EB] rounded-2xl p-4 mb-6 text-left">
+                      <span className="text-[10px] font-bold text-[#6B7280] bg-[#EFEFEF] px-2 py-0.5 rounded uppercase tracking-wider">
+                        {successCanvasType === 'pdf' || successCanvasType === 'upload' ? 'PDF SOURCE' : successCanvasType.toUpperCase()}
+                      </span>
+                      <h5 className="text-[14px] font-bold text-[#111111] mt-2 line-clamp-1 leading-tight">
+                        {successCanvasTitle}
+                      </h5>
+                      <p className="text-[11px] text-[#6B7280] mt-1">
+                        3 Explanations • 8 Practice Questions • Concept Roadmap
                       </p>
                     </div>
 
-                    <div>
-                      <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider block mb-2">
-                        Or test with sample materials:
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleCompleteSourceEntry('upload', 'Quantum Mechanics Principles')}
-                          className="px-3 py-1.5 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-xs font-medium text-[#111827] transition-colors cursor-pointer"
-                        >
-                          📄 Quantum Mechanics.pdf
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCompleteSourceEntry('upload', 'Cellular Biology Chapter 4')}
-                          className="px-3 py-1.5 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-xs font-medium text-[#111827] transition-colors cursor-pointer"
-                        >
-                          📄 Cellular Biology.pdf
-                        </button>
-                      </div>
+                    <button
+                      type="button"
+                      onClick={handleFinalLaunch}
+                      className="w-full h-10 rounded-[11px] bg-[#111111] hover:bg-[#222222] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.985] transition-all cursor-pointer"
+                    >
+                      <span>Open Canvas</span>
+                      <ArrowRight className="w-4 h-4 stroke-[2]" />
+                    </button>
+                  </div>
+                )}
+
+                {/* 3. SELECTION GRID STATE (ALL / MORE) */}
+                {!isAnalyzing && !showSuccessState && (activeSourceModal === 'all' || activeSourceModal === 'more') && (
+                  <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      
+                      {/* CARD 1: Upload File */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleDirectUploadClick();
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <FileUp className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Upload File
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            PDF, DOCX, PPTX, audio, video
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* CARD 2: Paste Text */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('paste');
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Clipboard className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Paste Text
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            Raw study notes, copied text or content
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* CARD 3: Web Link */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('link');
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <LinkIcon className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Web Link
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            Webpage, documentation or article
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* CARD 4: YouTube Lecture */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('youtube');
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Youtube className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                            YouTube Lecture
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            Turn a lecture into an adaptive Canvas
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* CARD 5: Scan / Photo */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('camera');
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Camera className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Scan / Photo
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            Capture notes, pages or whiteboards
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* CARD 6: Voice Lecture */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('voice');
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Mic className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Voice Lecture
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            Audio transcription and key concepts
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* CARD 7: Record Lecture */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('record');
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Monitor className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Record Lecture
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            Record voice, lectures, or browser tabs
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* CARD 8: Connect Accounts (Full Width) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          info('Cloud integrations ready', 'OneDrive, Notion, and Google Drive account connector workspace initialized.');
+                        }}
+                        className="px-5 py-3.5 h-[84px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group sm:col-span-2"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Plug className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-[15px] font-bold text-[#111111] tracking-tight leading-tight">
+                              Connect Accounts
+                            </h4>
+                            <ArrowRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#111111] group-hover:translate-x-0.5 transition-all" />
+                          </div>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal truncate">
+                            Google Drive, Notion, LMS, GitHub and more
+                          </p>
+                        </div>
+                      </button>
+
                     </div>
                   </div>
                 )}
 
-                {/* 2. PASTE TEXT */}
-                {activeSourceModal === 'paste' && (
-                  <div className="flex flex-col gap-3">
-                    <textarea
-                      rows={5}
-                      value={pasteText}
-                      onChange={(e) => setPasteText(e.target.value)}
-                      placeholder="Paste textbook excerpts, lecture transcripts, or raw notes here..."
-                      className="w-full p-3.5 bg-[#F9FAFB] border border-[#E5E7EB] focus:border-[#4B5BEA] focus:bg-[#FFFFFF] rounded-xl text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none resize-none transition-all"
-                    />
+                {/* 4. LEVEL-2 INPUT: FILE UPLOAD STATE */}
+                {!isAnalyzing && !showSuccessState && activeSourceModal === 'upload' && selectedUploadFile && (
+                  <div className="flex flex-col gap-4 pt-1">
+                    <div className="p-4 bg-[#FFFFFF] border border-[#E5E7EB] rounded-2xl flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#F7F8FA] flex items-center justify-center shrink-0 border border-slate-100 text-[#111111]">
+                          <FileText className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h5 className="text-sm font-bold text-[#111111] truncate leading-tight">
+                            {selectedUploadFile.name}
+                          </h5>
+                          <p className="text-xs text-[#6B7280] mt-0.5">
+                            {selectedUploadFile.size} • {isUploading ? 'Uploading...' : 'Upload complete'}
+                          </p>
+                        </div>
+                      </div>
 
-                    <div className="flex items-center justify-between text-xs text-[#9CA3AF]">
-                      <span>{pasteText.length} characters</span>
+                      {isUploading ? (
+                        <span className="text-xs font-bold text-[#111111]">
+                          {uploadProgress}%
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUploadFile(null);
+                            setUploadProgress(0);
+                            setIsUploading(false);
+                            setActiveSourceModal('all');
+                          }}
+                          className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    {isUploading && (
+                      <div className="w-full bg-[#E5E7EB] h-1 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#111111] h-full transition-all duration-200"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-4 mt-2">
                       <button
                         type="button"
-                        onClick={() =>
-                          setPasteText(
-                            'Photosynthesis is a biological process used by plants, algae, and certain bacteria to convert light energy into chemical energy stored in glucose molecules. Chloroplasts contain chlorophyll pigments that absorb blue and red light while reflecting green.'
-                          )
-                        }
-                        className="text-[#4B5BEA] hover:underline cursor-pointer font-medium"
+                        onClick={() => {
+                          setSelectedUploadFile(null);
+                          setUploadProgress(0);
+                          setIsUploading(false);
+                          setActiveSourceModal('all');
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
                       >
-                        Insert sample excerpt
+                        Back
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isUploading}
+                        onClick={() => handleAnalyzeAndLaunch('upload')}
+                        className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        Analyze & Create Canvas
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* 3. ADD LINK */}
-                {activeSourceModal === 'link' && (
-                  <div className="flex flex-col gap-3">
-                    <div className="relative">
-                      <LinkIcon className="w-4 h-4 text-[#9CA3AF] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                {/* 5. LEVEL-2 INPUT: PASTE TEXT */}
+                {!isAnalyzing && !showSuccessState && activeSourceModal === 'paste' && (
+                  <div className="flex flex-col gap-4 pt-1">
+                    <textarea
+                      rows={6}
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                      placeholder="Paste your study notes, essay draft, syllabus, book or copied learning material here."
+                      className="w-full h-[160px] min-h-[150px] max-h-[180px] p-4 bg-[#FFFFFF] border border-[#E5E7EB] focus:border-[#111111] rounded-[16px] text-sm text-[#111111] placeholder:text-[#9CA3AF] focus:outline-none resize-none leading-relaxed transition-colors shadow-inner"
+                    />
+                    
+                    <div className="flex items-center justify-between text-[11.5px] text-[#6B7280] -mt-1">
+                      <span>{pasteText.length} characters</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPasteText(
+                              'Quantum mechanics is a fundamental theory in physics that provides a description of the physical properties of nature at the scale of atoms and subatomic particles. It is the foundation of all quantum physics including quantum chemistry, quantum field theory, quantum technology, and quantum information science.'
+                            )
+                          }
+                          className="underline hover:text-[#111111] cursor-pointer font-medium"
+                        >
+                          Insert sample excerpt
+                        </button>
+                        <span>•</span>
+                        <span>Max 50,000 characters</span>
+                      </div>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-4 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('all');
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!pasteText.trim()}
+                        onClick={() => handleAnalyzeAndLaunch('paste', 'Pasted Text Notes')}
+                        className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        Create Canvas
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. LEVEL-2 INPUT: WEB LINK */}
+                {!isAnalyzing && !showSuccessState && activeSourceModal === 'link' && (
+                  <div className="flex flex-col gap-4 pt-1">
+                    <div className="relative flex items-center">
+                      <LinkIcon className="absolute left-4 w-4.5 h-4.5 text-[#9CA3AF] stroke-[1.8]" />
                       <input
                         type="url"
                         value={linkUrl}
                         onChange={(e) => setLinkUrl(e.target.value)}
-                        placeholder="https://en.wikipedia.org/wiki/Neural_network"
-                        className="w-full h-11 pl-10 pr-4 bg-[#F9FAFB] border border-[#E5E7EB] focus:border-[#4B5BEA] focus:bg-white rounded-xl text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none"
+                        placeholder="Paste a YouTube, website, or supported file URL"
+                        className="w-full h-12 pl-11 pr-4 bg-[#FFFFFF] border border-[#E5E7EB] focus:border-[#111111] rounded-[14px] text-sm text-[#111111] placeholder:text-[#9CA3AF] focus:outline-none transition-colors"
                       />
                     </div>
-                    <p className="text-xs text-[#667085]">
-                      Noevis will scrape and summarize the clean text from the provided webpage.
+
+                    {linkUrl.trim() !== '' && (
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-2.5 animate-fade-in">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[11.5px] font-semibold text-slate-700 truncate">
+                          Valid format detected. Ready to extract content.
+                        </span>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-[#6B7280] leading-normal px-1">
+                      Noevis extracts content, key sections, citations, and builds your interactive canvas.
                     </p>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-4 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('all');
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!linkUrl.trim()}
+                        onClick={() => handleAnalyzeAndLaunch('link', linkUrl)}
+                        className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        Add
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* 4. YOUTUBE */}
-                {activeSourceModal === 'youtube' && (
-                  <div className="flex flex-col gap-3">
-                    <div className="relative">
-                      <Youtube className="w-4 h-4 text-[#EF4444] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                {/* 7. LEVEL-2 INPUT: YOUTUBE LECTURE */}
+                {!isAnalyzing && !showSuccessState && activeSourceModal === 'youtube' && (
+                  <div className="flex flex-col gap-4 pt-1">
+                    <div className="relative flex items-center">
+                      <Youtube className="absolute left-4 w-4.5 h-4.5 text-[#9CA3AF] stroke-[1.8]" />
                       <input
                         type="url"
                         value={youtubeUrl}
                         onChange={(e) => setYoutubeUrl(e.target.value)}
                         placeholder="https://www.youtube.com/watch?v=..."
-                        className="w-full h-11 pl-10 pr-4 bg-[#F9FAFB] border border-[#E5E7EB] focus:border-[#4B5BEA] focus:bg-white rounded-xl text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none"
+                        className="w-full h-12 pl-11 pr-4 bg-[#FFFFFF] border border-[#E5E7EB] focus:border-[#111111] rounded-[14px] text-sm text-[#111111] placeholder:text-[#9CA3AF] focus:outline-none transition-colors"
                       />
                     </div>
-                    <p className="text-xs text-[#667085]">
-                      Noevis extracts the video transcript and timestamped chapters.
-                    </p>
-                  </div>
-                )}
 
-                {/* 5. SCAN / CAMERA */}
-                {activeSourceModal === 'camera' && (
-                  <div className="p-6 bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl flex flex-col items-center text-center">
-                    <Camera className="w-10 h-10 text-[#4B5BEA] mb-2" />
-                    <p className="text-sm font-semibold text-[#111827]">Optical OCR Ready</p>
-                    <p className="text-xs text-[#667085] mt-1 max-w-xs">
-                      Take a photo or upload an image of handwritten notes or whiteboard diagrams.
-                    </p>
-                  </div>
-                )}
+                    {youtubeUrl.trim() !== '' && (
+                      <div className="p-3 bg-red-50/50 border border-red-100 rounded-xl flex items-center gap-2.5 animate-fade-in">
+                        <Youtube className="w-4 h-4 text-red-600" />
+                        <span className="text-[11.5px] font-semibold text-red-700 truncate">
+                          YouTube lecture stream verified. Ready for automatic video transcription.
+                        </span>
+                      </div>
+                    )}
 
-                {/* 6. VOICE */}
-                {activeSourceModal === 'voice' && (
-                  <div className="p-6 bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-full bg-[#ECFDF5] text-[#10B981] flex items-center justify-center mb-2 animate-pulse">
-                      <Mic className="w-6 h-6" />
+                    <p className="text-xs text-[#6B7280] leading-normal px-1">
+                      Noevis transcribes video audio, identifies key timestamps, and generates practice questions.
+                    </p>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-4 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('all');
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!youtubeUrl.trim()}
+                        onClick={() => handleAnalyzeAndLaunch('youtube', 'YouTube Lecture Workspace')}
+                        className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        Create Canvas
+                      </button>
                     </div>
-                    <p className="text-sm font-semibold text-[#111827]">Voice Dictation Ready</p>
-                    <p className="text-xs text-[#667085] mt-1 max-w-xs">
-                      Speak or record a lecture segment. Speech-to-text will transcribe your notes.
-                    </p>
                   </div>
                 )}
-              </div>
 
-              {/* Modal Footer Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#E5E7EB]">
-                <button
-                  type="button"
-                  onClick={() => setActiveSourceModal(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#667085] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isProcessingSource}
-                  onClick={() => {
-                    if (activeSourceModal === 'paste') {
-                      handleCompleteSourceEntry('paste', 'Pasted Study Excerpt');
-                    } else if (activeSourceModal === 'link') {
-                      handleCompleteSourceEntry('link', linkUrl || 'Web Article Study Space');
-                    } else if (activeSourceModal === 'youtube') {
-                      handleCompleteSourceEntry('youtube', 'YouTube Lecture Workspace');
-                    } else {
-                      handleCompleteSourceEntry(activeSourceModal || 'upload');
-                    }
-                  }}
-                  className="px-5 py-2.5 rounded-xl bg-[#111827] hover:bg-[#1F2937] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
-                >
-                  {isProcessingSource ? (
-                    <div className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Analyzing Source...</span>
+                {/* 8. LEVEL-2 INPUT: SCAN / PHOTO OCR */}
+                {!isAnalyzing && !showSuccessState && activeSourceModal === 'camera' && (
+                  <div className="flex flex-col gap-4 pt-1">
+                    <div className="p-6 bg-[#FFFFFF] border border-dashed border-[#E5E7EB] hover:border-[#111111] transition-all rounded-[16px] flex flex-col items-center text-center cursor-pointer group">
+                      <div className="w-10 h-10 rounded-full bg-[#F7F8FA] group-hover:bg-[#111111] group-hover:text-white transition-colors flex items-center justify-center text-[#111111] mb-3">
+                        <Camera className="w-5 h-5 stroke-[1.8]" />
+                      </div>
+                      <h5 className="text-[14px] font-bold text-[#111111]">Drop handwritten notes or select photo</h5>
+                      <p className="text-[11.5px] text-[#6B7280] mt-1 max-w-sm leading-normal">
+                        Supports high-fidelity diagram extraction and whiteboard snapshot OCR indexing.
+                      </p>
                     </div>
-                  ) : (
-                    <span>Create Canvas</span>
-                  )}
-                </button>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-4 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('all');
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAnalyzeAndLaunch('camera', 'Snapshot OCR Canvas')}
+                        className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        Create Canvas
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 9. LEVEL-2 INPUT: VOICE LECTURE */}
+                {!isAnalyzing && !showSuccessState && activeSourceModal === 'voice' && (
+                  <div className="flex flex-col gap-4 pt-1">
+                    <div className="p-6 bg-[#FFFFFF] border border-dashed border-[#E5E7EB] hover:border-[#111111] transition-all rounded-[16px] flex flex-col items-center text-center cursor-pointer group">
+                      <div className="w-10 h-10 rounded-full bg-[#F7F8FA] group-hover:bg-[#111111] group-hover:text-white transition-colors flex items-center justify-center text-[#111111] mb-3">
+                        <Mic className="w-5 h-5 stroke-[1.8]" />
+                      </div>
+                      <h5 className="text-[14px] font-bold text-[#111111]">Upload audio file (MP3, WAV, M4A)</h5>
+                      <p className="text-[11.5px] text-[#6B7280] mt-1 max-w-sm leading-normal">
+                        Noevis converts speech summaries to structured timelines and key concept maps.
+                      </p>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-4 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('all');
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAnalyzeAndLaunch('voice', 'Voice Lecture Transcripts')}
+                        className="h-10 px-5 rounded-[11px] bg-[#111111] hover:bg-[#222222] text-white text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        Create Canvas
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 10. LEVEL-2 INPUT: RECORD LECTURE */}
+                {!isAnalyzing && !showSuccessState && activeSourceModal === 'record' && (
+                  <div className="flex flex-col gap-3 pt-1">
+                    <div className="flex flex-col gap-2.5">
+                      {/* Option 1: Microphone */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleAnalyzeAndLaunch('voice', 'Voice Recording Session');
+                        }}
+                        className="p-4 h-[78px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Mic className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[14.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Microphone
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal">
+                            Record your voice or class
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Option 2: Browser Tab */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleAnalyzeAndLaunch('voice', 'Browser Tab Audio Session');
+                        }}
+                        className="p-4 h-[78px] rounded-[16px] bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F9F9FA] active:scale-[0.985] transition-all duration-150 text-left flex items-center gap-4 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#F7F8FA] text-[#111111] group-hover:bg-[#111111] group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                          <Monitor className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-[14.5px] font-bold text-[#111111] tracking-tight leading-tight">
+                            Browser Tab
+                          </h4>
+                          <p className="text-xs text-[#6B7280] mt-0.5 leading-normal">
+                            Capture audio playing in a browser tab
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-4 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSourceModal('all');
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#6B7280] hover:text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+
               </div>
             </motion.div>
           </motion.div>
@@ -1286,178 +2049,196 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </AnimatePresence>
 
       {/* ================================================== */}
-      {/* 4. MOBILE SEARCH MODAL OVERLAY                      */}
+      {/* 4. MOBILE / OVERLAY DRAWER WITH SOFT BACKDROP BLUR */}
       {/* ================================================== */}
       <AnimatePresence>
-        {showSearchModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-start justify-center p-4 pt-16"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: -10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: -10 }}
-              className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden p-4 text-left"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
-                <div className="flex items-center gap-2 flex-1">
-                  <Search className="w-5 h-5 text-[#9CA3AF]" />
-                  <input
-                    type="text"
-                    autoFocus
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && searchQuery.trim()) {
-                        setShowSearchModal(false);
-                        handleCompleteSourceEntry('paste', searchQuery.trim());
-                      }
-                    }}
-                    placeholder="Search anything..."
-                    className="w-full bg-transparent text-base text-[#111827] focus:outline-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowSearchModal(false)}
-                  className="p-1 rounded-full text-[#667085] hover:bg-[#F3F4F6]"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="pt-4 flex flex-col gap-2">
-                <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider px-1">
-                  Quick Topics
-                </span>
-                {['Machine Learning Concepts', 'Linear Algebra Proofs', 'Organic Chemistry Basics'].map(
-                  (topic) => (
-                    <button
-                      key={topic}
-                      type="button"
-                      onClick={() => {
-                        setShowSearchModal(false);
-                        handleCompleteSourceEntry('paste', topic);
-                      }}
-                      className="text-left px-3 py-2 rounded-lg hover:bg-[#F7F8FA] text-sm text-[#111827] flex items-center gap-2"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#4B5BEA]" />
-                      <span>{topic}</span>
-                    </button>
-                  )
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ================================================== */}
-      {/* 5. MOBILE NAVIGATION DRAWER (<1024px)               */}
-      {/* ================================================== */}
-      <AnimatePresence>
-        {showMobileMenu && (
+        {showMobileDrawer && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop with soft blur and subtle neutral translucent veil */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowMobileMenu(false)}
-              className="fixed inset-0 bg-black/30 backdrop-blur-xs z-40 lg:hidden"
+              onClick={() => setShowMobileDrawer(false)}
+              className="fixed inset-0 bg-black/10 backdrop-blur-[8px] z-40 lg:hidden"
             />
 
-            {/* Slide-in Drawer */}
+            {/* Premium Mobile Drawer (300px, rounded-r-[20px]) */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-y-0 left-0 w-[280px] sm:w-[300px] bg-[#FFFFFF] border-r border-[#E5E7EB] z-50 p-5 flex flex-col justify-between lg:hidden shadow-2xl"
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-y-0 left-0 w-[300px] bg-[#FFFFFF] border-r border-[#E5E7EB] rounded-r-[20px] z-50 p-5 flex flex-col justify-between lg:hidden shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
             >
-              {/* Header inside drawer */}
-              <div className="flex flex-col gap-5">
-                <div className="flex items-center justify-between pb-2 border-b border-[#F3F4F6]">
-                  <Logo size="sm" variant="full" showBadge={false} />
-                  <button
-                    type="button"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="p-1 text-[#667085] hover:text-[#111827] rounded-lg"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Primary Action Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    handleStartLearningClick();
-                  }}
-                  className="w-full h-[46px] px-4 bg-[#111827] text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
-                >
-                  <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>Start learning</span>
-                </button>
-
-                {/* Drawer Navigation (Exact 6 Destinations) */}
-                <nav aria-label="Mobile Navigation" className="flex flex-col gap-1">
-                  {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeNav === item.id;
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleNavClick(item.id)}
-                        className={`w-full h-[44px] px-3.5 rounded-xl flex items-center gap-3 text-[14.5px] transition-colors cursor-pointer text-left ${
-                          isActive
-                            ? 'bg-[#EEF0FF] border border-[#DCE1FD] text-[#111827] font-semibold'
-                            : 'text-[#667085] hover:text-[#111827] hover:bg-[#F3F4F6] font-medium'
-                        }`}
-                      >
-                        <Icon
-                          className={`w-[19px] h-[19px] stroke-[2] ${
-                            isActive ? 'text-[#4B5BEA]' : 'text-[#667085]'
-                          }`}
-                        />
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-
-              {/* Bottom Profile Section in Drawer */}
-              <div className="pt-4 border-t border-[#E5E7EB] flex flex-col gap-3">
-                <div className="flex items-center gap-3 px-2 py-1">
-                  <div className="w-9 h-9 rounded-full bg-[#111827] text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                    {userEmail.charAt(0).toUpperCase()}
+              <div className="flex flex-col h-full w-full justify-between overflow-hidden">
+                {/* Top Section */}
+                <div className="flex flex-col gap-5 w-full shrink-0">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pt-1 pb-3 border-b border-[#E5E7EB]">
+                    <Logo size="sm" variant="full" showBadge={false} />
+                    <button
+                      type="button"
+                      onClick={() => setShowMobileDrawer(false)}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-[#111111] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                      aria-label="Close sidebar"
+                    >
+                      <X className="w-5 h-5 stroke-[2] text-[#111111]" />
+                    </button>
                   </div>
-                  <div className="truncate">
-                    <p className="text-xs font-semibold text-[#111827] truncate">{userEmail}</p>
-                    <p className="text-[11px] text-[#667085]">Context: {studyContext}</p>
-                  </div>
-                </div>
 
-                {onResetOnboarding && (
+                  {/* Primary Action Button: + Start learning */}
                   <button
                     type="button"
                     onClick={() => {
-                      setShowMobileMenu(false);
-                      onResetOnboarding();
+                      setShowMobileDrawer(false);
+                      handleUniversalStartLearningClick();
                     }}
-                    className="w-full px-2 py-1.5 text-[11.5px] font-medium text-[#667085] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg transition-colors cursor-pointer flex items-center gap-2"
+                    className="w-full h-[50px] px-4 bg-[#FFFFFF] hover:bg-[#F5F5F5] active:bg-[#EFEFEF] border border-[#E5E7EB] rounded-[12px] text-[15px] font-semibold text-[#111111] flex items-center gap-3 transition-colors cursor-pointer focus-visible:outline-none"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                    <span>Reset Onboarding Context</span>
+                    <Plus className="w-[20px] h-[20px] stroke-[2.2] text-[#111111]" />
+                    <span>Start learning</span>
                   </button>
-                )}
+
+                  {/* Primary Navigation */}
+                  <nav aria-label="Mobile Navigation" className="flex flex-col gap-1">
+                    {mainNavItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeNav === item.id;
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleNavClick(item.id)}
+                          className={`w-full h-[46px] px-4 rounded-[12px] flex items-center gap-3 text-[15.5px] transition-colors duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                            isActive
+                              ? 'bg-[#F1F1F1] text-[#111111] font-semibold'
+                              : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                          }`}
+                        >
+                          <Icon className="w-[20px] h-[20px] stroke-[1.8] text-[#111111]" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                {/* Middle Scroll Section (Dynamic Content) */}
+                <div className="flex-1 overflow-y-auto my-3 pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                  {canvases.length > 0 && (
+                    <div className="flex flex-col gap-5">
+                      {/* Recent List */}
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#6B7280] tracking-wider uppercase">
+                          <span>Recent</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowMobileDrawer(false);
+                              setActiveNav('history');
+                            }}
+                            className="hover:underline text-[11px] normal-case font-medium text-[#111111] cursor-pointer"
+                          >
+                            View all
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          {canvases.slice(0, 4).map((canvas) => (
+                            <button
+                              key={`mob-recent-${canvas.id}`}
+                              type="button"
+                              onClick={() => {
+                                setShowMobileDrawer(false);
+                                onStartCanvas(canvas.sourceType);
+                              }}
+                              className="w-full h-[38px] px-3 rounded-[10px] hover:bg-[#F5F5F5] transition-colors flex items-center gap-2.5 text-[14px] text-left text-[#111111] font-medium truncate cursor-pointer"
+                            >
+                              <Clock className="w-4 h-4 text-[#6B7280] shrink-0" />
+                              <span className="truncate flex-1">{canvas.title}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Canvases List */}
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between px-3 text-[12px] font-semibold text-[#6B7280] tracking-wider uppercase">
+                          <span>Canvases</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowMobileDrawer(false);
+                              setActiveNav('canvases');
+                            }}
+                            className="hover:underline text-[11px] normal-case font-medium text-[#111111] cursor-pointer"
+                          >
+                            View all
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          {canvases.map((canvas) => (
+                            <div
+                              key={`mob-canvas-${canvas.id}`}
+                              className="w-full h-[38px] px-3 rounded-[10px] hover:bg-[#F5F5F5] transition-colors flex items-center justify-between gap-2 text-[14px] text-[#111111] font-medium group relative"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowMobileDrawer(false);
+                                  onStartCanvas(canvas.sourceType);
+                                }}
+                                className="flex-1 flex items-center gap-2.5 text-left truncate cursor-pointer h-full"
+                              >
+                                <Diamond className="w-3.5 h-3.5 text-[#111111] shrink-0" />
+                                <span className="truncate">{canvas.title}</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Section */}
+                <div className="flex flex-col gap-4 pt-3 border-t border-[#E5E7EB] shrink-0">
+                  {/* System Navigation */}
+                  <nav aria-label="Mobile System Navigation" className="flex flex-col gap-1">
+                    {systemNavItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeNav === item.id;
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleNavClick(item.id)}
+                          className={`w-full h-[44px] px-4 rounded-[12px] flex items-center gap-3 text-[15.5px] transition-colors duration-150 cursor-pointer text-left focus-visible:outline-none ${
+                            isActive
+                              ? 'bg-[#F1F1F1] text-[#111111] font-semibold'
+                              : 'text-[#111111] hover:bg-[#F5F5F5] font-medium'
+                          }`}
+                        >
+                          <Icon className="w-[20px] h-[20px] stroke-[1.8] text-[#111111]" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+
+                  {/* Profile Block */}
+                  <div className="flex items-center gap-3 p-2.5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-[14px]">
+                    <div className="w-9 h-9 rounded-full bg-[#111111] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                      {userInitials}
+                    </div>
+                    <div className="truncate text-left">
+                      <p className="text-xs font-semibold text-[#111111] truncate">{userName}</p>
+                      <p className="text-[11px] text-[#6B7280] truncate">{userEmail}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </>

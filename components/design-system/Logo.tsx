@@ -29,58 +29,23 @@ export const Logo: React.FC<LogoProps> = ({
   }[size];
 
   // Exact Brand Mark SVG based on official NOEVIS visual reference
-  // Three ascending learning pillars representing "Understand. Practice. Master."
+  // Two rounded vertical pillars and bottom-right circular dot
   const BrandMark = (
     <svg
       width={sizeConfig.width}
       height={sizeConfig.height}
-      viewBox="0 0 160 120"
+      viewBox="0 0 32 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0 transition-transform duration-200"
       aria-hidden="true"
     >
-      {/* Pillar 1: Base foot + First Ascending Step (Understand) */}
-      <path
-        d="M 14 96 H 38 C 45 96 50 91 50 84 V 68 C 50 60 56 54 64 54 C 72 54 78 60 78 68 V 96"
-        stroke={markColor}
-        strokeWidth="11"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Inner contour of Pillar 1 */}
-      <path
-        d="M 50 82 C 50 87 54 91 60 91 H 68 C 74 91 78 87 78 82"
-        stroke={markColor}
-        strokeWidth="9"
-        strokeLinecap="round"
-      />
-
-      {/* Pillar 2: Middle Ascending Step (Practice) */}
-      <path
-        d="M 78 68 C 78 52 86 40 98 40 C 110 40 118 52 118 68 V 96"
-        stroke={markColor}
-        strokeWidth="11"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Bottom scoop of Pillar 2 */}
-      <path
-        d="M 88 96 C 96 96 102 91 106 84 L 118 96"
-        stroke={markColor}
-        strokeWidth="9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Pillar 3: Tallest Step (Master) + Sweeping Base Curve */}
-      <path
-        d="M 118 42 C 118 22 128 12 142 12 C 152 12 158 19 158 32 V 84 C 158 91 152 96 144 96 H 124"
-        stroke={markColor}
-        strokeWidth="11"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {/* Left pill */}
+      <rect x="2" y="3" width="5.5" height="18" rx="2.75" fill={markColor} />
+      {/* Right pill */}
+      <rect x="11" y="3" width="5.5" height="18" rx="2.75" fill={markColor} />
+      {/* Bottom right dot */}
+      <circle cx="23.5" cy="18" r="3" fill={markColor} />
     </svg>
   );
 
