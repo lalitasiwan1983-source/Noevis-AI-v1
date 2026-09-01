@@ -10,3 +10,5 @@ export * from './DeskMoreMenu';
 export * from './DeskSearchModal';
 export * from './DeskShell';
 export * from './learn';
+export * from './practice';
+export * from './quiz';

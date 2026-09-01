@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { DeskWorkspaceMode, DeskContextData } from './types';
 import { LearnExperience } from './learn';
+import { PracticeExperience } from './practice';
+import { QuizExperience } from './quiz';
 
 interface DeskLearningSurfaceProps {
   activeMode: DeskWorkspaceMode;
@@ -53,88 +55,30 @@ export const DeskLearningSurface: React.FC<DeskLearningSurfaceProps> = ({
           </div>
         )}
 
-        {/* MODE: PRACTICE */}
+        {/* MODE: PRACTICE (Rich Phase 3 Experience) */}
         {activeMode === 'practice' && (
-          <motion.div
-            key="desk-surface-practice"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="w-full flex flex-col items-stretch"
-          >
-            <div className="w-full pb-6 border-b border-[#E5E7EB] mb-8">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#374151] shadow-2xs mb-3">
-                <Sparkles className="w-3.5 h-3.5 text-[#111827]" />
-                <span>Active Recall & Application</span>
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-                Practice & Problem Solving
-              </h2>
-              <p className="text-base text-[#667085] mt-1.5">
-                Apply your understanding of {contextData.currentConcept} through guided scenarios.
-              </p>
-            </div>
-
-            <div className="w-full rounded-2xl bg-[#FFFFFF] border border-[#E5E7EB] p-8 sm:p-12 flex flex-col items-center text-center justify-center min-h-[360px]">
-              <div className="w-14 h-14 rounded-2xl bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center text-[#111827] mb-5">
-                <Sparkles className="w-7 h-7 stroke-[1.8]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#111827] mb-2">Practice Workspace</h3>
-              <p className="text-[15px] text-[#667085] max-w-md mb-6 leading-relaxed">
-                Interactive problems, scenario-based prompts, and step-by-step calculation exercises will be configured here.
-              </p>
-              <button
-                type="button"
-                onClick={() => onChangeMode('learn')}
-                className="h-10 px-4 rounded-xl bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#111827] text-sm font-semibold transition-colors cursor-pointer"
-              >
-                ← Return to Learn Mode
-              </button>
-            </div>
-          </motion.div>
+          <div key="desk-surface-practice-container" className="w-full">
+            <PracticeExperience
+              currentConceptIndex={contextData.conceptIndex}
+              onSwitchToLearn={() => onChangeMode('learn')}
+              onOpenAskNoevis={onOpenAskNoevis}
+              onChangeMode={onChangeMode}
+            />
+          </div>
         )}
 
-        {/* MODE: QUIZ */}
+        {/* MODE: QUIZ (Rich Phase 4 Experience) */}
         {activeMode === 'quiz' && (
-          <motion.div
-            key="desk-surface-quiz"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="w-full flex flex-col items-stretch"
-          >
-            <div className="w-full pb-6 border-b border-[#E5E7EB] mb-8">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#374151] shadow-2xs mb-3">
-                <HelpCircle className="w-3.5 h-3.5 text-[#111827]" />
-                <span>Mastery Check</span>
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-                Concept Quiz
-              </h2>
-              <p className="text-base text-[#667085] mt-1.5">
-                Validate your grasp of key equations, principles, and definitions.
-              </p>
-            </div>
-
-            <div className="w-full rounded-2xl bg-[#FFFFFF] border border-[#E5E7EB] p-8 sm:p-12 flex flex-col items-center text-center justify-center min-h-[360px]">
-              <div className="w-14 h-14 rounded-2xl bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center text-[#111827] mb-5">
-                <HelpCircle className="w-7 h-7 stroke-[1.8]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#111827] mb-2">Quiz Workspace</h3>
-              <p className="text-[15px] text-[#667085] max-w-md mb-6 leading-relaxed">
-                Targeted diagnostic multiple-choice and conceptual assessment questions will render here.
-              </p>
-              <button
-                type="button"
-                onClick={() => onChangeMode('learn')}
-                className="h-10 px-4 rounded-xl bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#111827] text-sm font-semibold transition-colors cursor-pointer"
-              >
-                ← Return to Learn Mode
-              </button>
-            </div>
-          </motion.div>
+          <div key="desk-surface-quiz-container" className="w-full">
+            <QuizExperience
+              topicTitle={contextData.topic}
+              chapterTitle={contextData.chapter}
+              currentConceptIndex={contextData.conceptIndex}
+              onSwitchToLearn={() => onChangeMode('learn')}
+              onOpenAskNoevis={onOpenAskNoevis}
+              onChangeMode={onChangeMode}
+            />
+          </div>
         )}
 
         {/* MODE: REVIEW */}

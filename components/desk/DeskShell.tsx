@@ -30,7 +30,7 @@ export const DeskShell: React.FC<DeskShellProps> = ({
   const { info, success } = useToast();
 
   // Active Workspace Navigation Mode
-  const [activeMode, setActiveMode] = useState<DeskWorkspaceMode>('learn');
+  const [activeMode, setActiveMode] = useState<DeskWorkspaceMode>('quiz');
 
   // Concept Index and Context State
   const [conceptIndex, setConceptIndex] = useState(1);
