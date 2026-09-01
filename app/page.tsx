@@ -7,11 +7,12 @@ import {
   WelcomeScreen,
   AuthScreen,
   OnboardingScreen,
+  HomeScreen,
   CanvasScreen,
 } from '@/components/screens';
 import { OnboardingData } from '@/components/screens/OnboardingScreen';
 
-type ScreenType = 'splash' | 'welcome' | 'auth' | 'onboarding' | 'canvas';
+type ScreenType = 'splash' | 'welcome' | 'auth' | 'onboarding' | 'home' | 'canvas';
 
 export default function NoevisApp() {
   const [screen, setScreen] = useState<ScreenType>('welcome');
@@ -39,7 +40,7 @@ export default function NoevisApp() {
     try {
       const isCompleted = localStorage.getItem('noevis_onboarding_completed') === 'true';
       if (isCompleted) {
-        setScreen('canvas');
+        setScreen('home');
         return;
       }
     } catch {
@@ -52,6 +53,10 @@ export default function NoevisApp() {
 
   const handleOnboardingComplete = (data: OnboardingData) => {
     setOnboardingData(data);
+    setScreen('home');
+  };
+
+  const handleStartCanvas = (_sourceType?: string) => {
     setScreen('canvas');
   };
 
@@ -94,12 +99,23 @@ export default function NoevisApp() {
           />
         )}
 
+        {screen === 'home' && (
+          <HomeScreen
+            key="home-screen"
+            userEmail={userEmail}
+            onboardingData={onboardingData}
+            onStartCanvas={handleStartCanvas}
+            onResetOnboarding={handleResetOnboarding}
+          />
+        )}
+
         {screen === 'canvas' && (
           <CanvasScreen
             key="canvas-screen"
             userEmail={userEmail}
             onboardingData={onboardingData}
             onResetOnboarding={handleResetOnboarding}
+            onBackToHome={() => setScreen('home')}
           />
         )}
 

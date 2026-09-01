@@ -24,12 +24,14 @@ interface CanvasScreenProps {
   userEmail?: string;
   onboardingData?: Partial<OnboardingData>;
   onResetOnboarding?: () => void;
+  onBackToHome?: () => void;
 }
 
 export const CanvasScreen: React.FC<CanvasScreenProps> = ({
   userEmail = 'learner@noevis.ai',
   onboardingData,
   onResetOnboarding,
+  onBackToHome,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'practice' | 'documents' | 'graph'>('all');
@@ -46,11 +48,26 @@ export const CanvasScreen: React.FC<CanvasScreenProps> = ({
       {/* Canvas Top Bar */}
       <header className="w-full h-[64px] sm:h-[68px] bg-[#FFFFFF] border-b border-[#E5E7EB] px-4 sm:px-8 flex items-center justify-between shrink-0 z-30">
         <div className="flex items-center gap-4">
-          <Logo size="sm" variant="full" showBadge={false} />
+          <div
+            onClick={onBackToHome}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+            title="Return to Home"
+          >
+            <Logo size="sm" variant="full" showBadge={false} />
+          </div>
           <span className="hidden md:inline-block h-4 w-[1px] bg-[#E5E7EB]" />
           <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#4B5BEA] bg-[#EEF0FF] px-2.5 py-1 rounded-full border border-[#DCE1FD]">
             <Sparkles className="w-3 h-3" /> Canvas Mode
           </span>
+          {onBackToHome && (
+            <button
+              type="button"
+              onClick={onBackToHome}
+              className="text-xs font-medium text-[#667085] hover:text-[#111827] hover:bg-[#F3F4F6] px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ml-2"
+            >
+              ← Back to Home
+            </button>
+          )}
         </div>
 
         {/* User Profile Context Badge */}
