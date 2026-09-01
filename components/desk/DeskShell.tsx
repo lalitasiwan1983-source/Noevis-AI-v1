@@ -11,6 +11,8 @@ import { AskNoevisDrawer } from './AskNoevisDrawer';
 import { DeskMoreMenu } from './DeskMoreMenu';
 import { DeskSearchModal } from './DeskSearchModal';
 import { DeskWorkspaceMode, DeskContextData } from './types';
+import { DeskNote } from './notes';
+import { DeskMoreSurface, MoreToolId } from './more';
 import { useToast } from '@/components/design-system/Toast';
 
 interface DeskShellProps {
@@ -29,8 +31,9 @@ export const DeskShell: React.FC<DeskShellProps> = ({
 }) => {
   const { info, success } = useToast();
 
-  // Active Workspace Navigation Mode
-  const [activeMode, setActiveMode] = useState<DeskWorkspaceMode>('quiz');
+  // Active Workspace Navigation Mode - More is active in Phase 7
+  const [activeMode, setActiveMode] = useState<DeskWorkspaceMode>('more');
+  const [selectedMoreTool, setSelectedMoreTool] = useState<MoreToolId>('summary');
 
   // Concept Index and Context State
   const [conceptIndex, setConceptIndex] = useState(1);
@@ -56,11 +59,22 @@ export const DeskShell: React.FC<DeskShellProps> = ({
     sourceType,
   };
 
+  // Persistent Desk Note State for current learning context
+  const [deskNote, setDeskNote] = useState<DeskNote>({
+    id: 'current-desk-note',
+    title: '',
+    content: '',
+    topic: contextData.topic,
+    chapter: contextData.chapter,
+    conceptName: currentConcept,
+    conceptIndex,
+  });
+
   // Overlay Modals / Drawers State
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isReferenceOpen, setIsReferenceOpen] = useState(false);
   const [isAskNoevisOpen, setIsAskNoevisOpen] = useState(false);
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   // Pagination Handlers
   const handlePrevConcept = () => {
@@ -93,7 +107,7 @@ export const DeskShell: React.FC<DeskShellProps> = ({
         setIsSearchOpen(false);
         setIsReferenceOpen(false);
         setIsAskNoevisOpen(false);
-        setIsMoreMenuOpen(false);
+        setIsMoreOpen(false);
       }
     };
 
@@ -101,19 +115,14 @@ export const DeskShell: React.FC<DeskShellProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleMoreAction = (actionId: string) => {
-    if (actionId === 'export') {
-      info('Export Desk', 'Exporting formatted summary is scheduled for Phase 2.');
-    } else if (actionId === 'share') {
-      info('Share Workspace', 'Collaborative link copied to clipboard preview.');
-    } else if (actionId === 'reset') {
-      setConceptIndex(1);
-      setActiveMode('learn');
-      success('Progress Reset', 'Returned to Concept 1 in Learn mode.');
-    } else if (actionId === 'source') {
+  const handleSelectMoreTool = (toolId: MoreToolId) => {
+    if (toolId === 'reference') {
       setIsReferenceOpen(true);
-    } else if (actionId === 'preferences') {
-      info('Desk Preferences', 'Visual typography and contrast settings preview.');
+    } else if (toolId === 'ask_noevis') {
+      setIsAskNoevisOpen(true);
+    } else {
+      setSelectedMoreTool(toolId);
+      setActiveMode('more');
     }
   };
 
@@ -121,7 +130,8 @@ export const DeskShell: React.FC<DeskShellProps> = ({
     if (actionName === 'simpler') {
       setIsAskNoevisOpen(true);
     } else if (actionName === 'example') {
-      setIsAskNoevisOpen(true);
+      setSelectedMoreTool('examples');
+      setActiveMode('more');
     } else if (actionName === 'visual') {
       // scroll to diagram section
       const diagramEl = document.getElementById('learn-visual-diagram-section');
@@ -147,17 +157,10 @@ export const DeskShell: React.FC<DeskShellProps> = ({
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenReference={() => setIsReferenceOpen((prev) => !prev)}
         onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
-        onToggleMoreMenu={() => setIsMoreMenuOpen((prev) => !prev)}
-        isMoreMenuOpen={isMoreMenuOpen}
+        onToggleMoreMenu={() => setIsMoreOpen((prev) => !prev)}
+        isMoreMenuOpen={isMoreOpen}
         isReferenceOpen={isReferenceOpen}
         isAskNoevisOpen={isAskNoevisOpen}
-      />
-
-      {/* Top Header More Menu Popover */}
-      <DeskMoreMenu
-        isOpen={isMoreMenuOpen}
-        onClose={() => setIsMoreMenuOpen(false)}
-        onAction={handleMoreAction}
       />
 
       {/* 2. CONTEXT STRIP */}
@@ -173,6 +176,8 @@ export const DeskShell: React.FC<DeskShellProps> = ({
       <DeskWorkspaceNav
         activeMode={activeMode}
         onChangeMode={setActiveMode}
+        onOpenMore={() => setIsMoreOpen((prev) => !prev)}
+        isMoreOpen={isMoreOpen}
       />
 
       {/* 4. MAIN LEARNING SURFACE CONTAINER */}
@@ -180,11 +185,15 @@ export const DeskShell: React.FC<DeskShellProps> = ({
         <DeskLearningSurface
           activeMode={activeMode}
           contextData={contextData}
+          activeMoreTool={selectedMoreTool}
           onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
           onOpenReference={() => setIsReferenceOpen(true)}
           onChangeMode={setActiveMode}
           onNextConcept={handleNextConcept}
           onPrevConcept={handlePrevConcept}
+          onSelectConcept={setConceptIndex}
+          note={deskNote}
+          onNoteChange={setDeskNote}
         />
       </main>
 
@@ -196,6 +205,15 @@ export const DeskShell: React.FC<DeskShellProps> = ({
         onNextConcept={handleNextConcept}
         onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
         onQuickAction={handleQuickAction}
+      />
+
+      {/* Contextual More Surface (Desktop Popover + Mobile Bottom Sheet) */}
+      <DeskMoreSurface
+        isOpen={isMoreOpen}
+        onClose={() => setIsMoreOpen(false)}
+        onSelectTool={handleSelectMoreTool}
+        onOpenReference={() => setIsReferenceOpen(true)}
+        onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
       />
 
       {/* Contextual Drawers & Modals */}
@@ -225,3 +243,4 @@ export const DeskShell: React.FC<DeskShellProps> = ({
     </div>
   );
 };
+

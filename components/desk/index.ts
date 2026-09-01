@@ -12,3 +12,6 @@ export * from './DeskShell';
 export * from './learn';
 export * from './practice';
 export * from './quiz';
+export * from './review';
+export * from './notes';
+export * from './more';
