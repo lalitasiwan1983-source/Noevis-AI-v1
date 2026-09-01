@@ -1,18 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { DeskHeader } from './DeskHeader';
-import { DeskContextStrip } from './DeskContextStrip';
-import { DeskWorkspaceNav } from './DeskWorkspaceNav';
-import { DeskLearningSurface } from './DeskLearningSurface';
-import { DeskActionDock } from './DeskActionDock';
-import { ReferenceDrawer } from './ReferenceDrawer';
-import { AskNoevisDrawer } from './AskNoevisDrawer';
-import { DeskMoreMenu } from './DeskMoreMenu';
+import React, { useState, useEffect } from 'react';
+import { DeskSplitWorkspace } from './DeskSplitWorkspace';
+import { ReferenceDrawer } from './reference';
+import { AskNoevisDrawer } from './ask-noevis';
 import { DeskSearchModal } from './DeskSearchModal';
 import { DeskWorkspaceMode, DeskContextData } from './types';
 import { DeskNote } from './notes';
-import { DeskMoreSurface, MoreToolId } from './more';
 import { useToast } from '@/components/design-system/Toast';
 
 interface DeskShellProps {
@@ -24,26 +18,27 @@ interface DeskShellProps {
 }
 
 export const DeskShell: React.FC<DeskShellProps> = ({
-  deskTitle = 'Biology: Cellular Energetics & Respiration',
+  deskTitle = 'Biology: Photosynthesis',
   sourceType = 'document',
   onBackToHome,
   userEmail = 'learner@noevis.ai',
 }) => {
-  const { info, success } = useToast();
+  const { success } = useToast();
 
-  // Active Workspace Navigation Mode - More is active in Phase 7
-  const [activeMode, setActiveMode] = useState<DeskWorkspaceMode>('more');
-  const [selectedMoreTool, setSelectedMoreTool] = useState<MoreToolId>('summary');
+  // Active Workspace Navigation Mode
+  const [activeMode, setActiveMode] = useState<DeskWorkspaceMode>('learn');
 
   // Concept Index and Context State
   const [conceptIndex, setConceptIndex] = useState(1);
-  const totalConcepts = 4;
+  const totalConcepts = 6;
 
   const conceptList = [
-    'Light-Dependent Reactions & Photophosphorylation',
-    'Calvin Cycle: Carbon Fixation & Glucose Synthesis',
-    'Cellular Respiration & Glycolytic Pathway',
-    'Oxidative Phosphorylation & ATP Yields',
+    'Concept 1: Autotrophic Nutrition & Light Capture',
+    'Concept 2: Light Reactions & Photolysis of Water',
+    'Concept 3: Calvin Cycle & Carbon Fixation',
+    'Concept 4: Chloroplast Anatomy & Stomatal Dynamics',
+    'Concept 5: Factors Affecting Photosynthetic Rate',
+    'Concept 6: CAM & C4 Ecological Adaptations',
   ];
 
   const currentConcept = conceptList[conceptIndex - 1] || conceptList[0];
@@ -51,19 +46,20 @@ export const DeskShell: React.FC<DeskShellProps> = ({
   const contextData: DeskContextData = {
     deskTitle,
     topic: 'Biology',
-    chapter: 'Chapter 6: Life Processes',
+    chapter: 'Biology - Plant Biology',
     currentConcept,
     conceptIndex,
     totalConcepts,
-    sourceName: sourceType === 'youtube' ? 'YouTube Lecture: Cellular Energetics' : 'NCERT Class 10 Biology — Chapter 6',
+    sourceName: sourceType === 'youtube' ? 'YouTube Lecture: Photosynthesis' : 'NCERT Class 10 Biology — Plant Biology',
     sourceType,
+    activeMode,
   };
 
   // Persistent Desk Note State for current learning context
   const [deskNote, setDeskNote] = useState<DeskNote>({
     id: 'current-desk-note',
-    title: '',
-    content: '',
+    title: 'Photosynthesis Notes',
+    content: 'Photosynthesis converts solar photons into chemical glucose bonds.',
     topic: contextData.topic,
     chapter: contextData.chapter,
     conceptName: currentConcept,
@@ -74,7 +70,6 @@ export const DeskShell: React.FC<DeskShellProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isReferenceOpen, setIsReferenceOpen] = useState(false);
   const [isAskNoevisOpen, setIsAskNoevisOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   // Pagination Handlers
   const handlePrevConcept = () => {
@@ -102,12 +97,11 @@ export const DeskShell: React.FC<DeskShellProps> = ({
         e.preventDefault();
         setIsAskNoevisOpen((prev) => !prev);
       }
-      // Escape closes everything
+      // Escape closes overlays
       if (e.key === 'Escape') {
         setIsSearchOpen(false);
         setIsReferenceOpen(false);
         setIsAskNoevisOpen(false);
-        setIsMoreOpen(false);
       }
     };
 
@@ -115,105 +109,24 @@ export const DeskShell: React.FC<DeskShellProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleSelectMoreTool = (toolId: MoreToolId) => {
-    if (toolId === 'reference') {
-      setIsReferenceOpen(true);
-    } else if (toolId === 'ask_noevis') {
-      setIsAskNoevisOpen(true);
-    } else {
-      setSelectedMoreTool(toolId);
-      setActiveMode('more');
-    }
-  };
-
-  const handleQuickAction = (actionName: string) => {
-    if (actionName === 'simpler') {
-      setIsAskNoevisOpen(true);
-    } else if (actionName === 'example') {
-      setSelectedMoreTool('examples');
-      setActiveMode('more');
-    } else if (actionName === 'visual') {
-      // scroll to diagram section
-      const diagramEl = document.getElementById('learn-visual-diagram-section');
-      if (diagramEl) {
-        diagramEl.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        setIsAskNoevisOpen(true);
-      }
-    } else if (actionName === 'note') {
-      setActiveMode('notes');
-    }
-  };
-
   return (
-    <div
-      id="noevis-desk-shell"
-      className="relative min-h-[100dvh] w-full bg-[#F7F8FA] text-[#111827] flex flex-col justify-between overflow-x-hidden font-sans select-none"
-    >
-      {/* 1. TOP HEADER */}
-      <DeskHeader
-        deskTitle={deskTitle}
-        onBack={onBackToHome || (() => {})}
-        onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenReference={() => setIsReferenceOpen((prev) => !prev)}
-        onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
-        onToggleMoreMenu={() => setIsMoreOpen((prev) => !prev)}
-        isMoreMenuOpen={isMoreOpen}
-        isReferenceOpen={isReferenceOpen}
-        isAskNoevisOpen={isAskNoevisOpen}
-      />
-
-      {/* 2. CONTEXT STRIP */}
-      <DeskContextStrip
-        topic={contextData.topic}
-        chapter={contextData.chapter}
-        concept={contextData.currentConcept}
-        conceptIndex={conceptIndex}
-        totalConcepts={totalConcepts}
-      />
-
-      {/* 3. WORKSPACE NAVIGATION */}
-      <DeskWorkspaceNav
+    <div id="noevis-desk-shell" className="relative min-h-[100dvh] w-full bg-[#F8F9FA] text-[#111827] overflow-hidden select-none">
+      {/* UNIFIED SPLIT WORKSPACE */}
+      <DeskSplitWorkspace
+        contextData={contextData}
         activeMode={activeMode}
         onChangeMode={setActiveMode}
-        onOpenMore={() => setIsMoreOpen((prev) => !prev)}
-        isMoreOpen={isMoreOpen}
-      />
-
-      {/* 4. MAIN LEARNING SURFACE CONTAINER */}
-      <main className="w-full flex-1 flex flex-col justify-start pb-6">
-        <DeskLearningSurface
-          activeMode={activeMode}
-          contextData={contextData}
-          activeMoreTool={selectedMoreTool}
-          onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
-          onOpenReference={() => setIsReferenceOpen(true)}
-          onChangeMode={setActiveMode}
-          onNextConcept={handleNextConcept}
-          onPrevConcept={handlePrevConcept}
-          onSelectConcept={setConceptIndex}
-          note={deskNote}
-          onNoteChange={setDeskNote}
-        />
-      </main>
-
-      {/* 5. ACTION DOCK */}
-      <DeskActionDock
         conceptIndex={conceptIndex}
         totalConcepts={totalConcepts}
-        onPrevConcept={handlePrevConcept}
         onNextConcept={handleNextConcept}
+        onPrevConcept={handlePrevConcept}
+        onSelectConcept={setConceptIndex}
         onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
-        onQuickAction={handleQuickAction}
-      />
-
-      {/* Contextual More Surface (Desktop Popover + Mobile Bottom Sheet) */}
-      <DeskMoreSurface
-        isOpen={isMoreOpen}
-        onClose={() => setIsMoreOpen(false)}
-        onSelectTool={handleSelectMoreTool}
         onOpenReference={() => setIsReferenceOpen(true)}
-        onOpenAskNoevis={() => setIsAskNoevisOpen(true)}
+        note={deskNote}
+        onNoteChange={setDeskNote}
+        onBackToHome={onBackToHome}
+        userEmail={userEmail}
       />
 
       {/* Contextual Drawers & Modals */}
@@ -221,12 +134,29 @@ export const DeskShell: React.FC<DeskShellProps> = ({
         isOpen={isReferenceOpen}
         onClose={() => setIsReferenceOpen(false)}
         contextData={contextData}
+        onAddToNotes={(excerpt) => {
+          setDeskNote((prev) => ({
+            ...prev,
+            content: prev.content
+              ? `${prev.content}\n\n> **[Source Excerpt]**\n> "${excerpt}"\n`
+              : `> **[Source Excerpt]**\n> "${excerpt}"\n`,
+          }));
+          success('Added to Notes', 'Source excerpt appended to your Desk notes.');
+        }}
       />
 
       <AskNoevisDrawer
         isOpen={isAskNoevisOpen}
         onClose={() => setIsAskNoevisOpen(false)}
         contextData={contextData}
+        onAddToNotes={(text) => {
+          setDeskNote((prev) => ({
+            ...prev,
+            content: prev.content
+              ? `${prev.content}\n\n${text}\n`
+              : `${text}\n`,
+          }));
+        }}
       />
 
       <DeskSearchModal
@@ -243,4 +173,5 @@ export const DeskShell: React.FC<DeskShellProps> = ({
     </div>
   );
 };
+
 

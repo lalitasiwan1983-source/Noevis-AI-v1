@@ -20,4 +20,5 @@ export interface DeskContextData {
   totalConcepts: number;
   sourceName?: string;
   sourceType?: string;
+  activeMode?: DeskWorkspaceMode;
 }
