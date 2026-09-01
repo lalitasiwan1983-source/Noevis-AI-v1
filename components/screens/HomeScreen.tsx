@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Logo } from '@/components/design-system/Logo';
 import { useToast } from '@/components/design-system/Toast';
@@ -10,6 +10,7 @@ import { CreateDeskScreen } from './CreateDeskScreen';
 import { LibraryScreen } from './LibraryScreen';
 import { ActivityScreen } from './ActivityScreen';
 import { SettingsScreen } from './SettingsScreen';
+import { HelpScreen } from './HelpScreen';
 import {
   Sparkle,
   Diamond,
@@ -46,6 +47,9 @@ import {
   History,
   Check,
   Monitor,
+  LogOut,
+  Moon,
+  Sun,
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -53,6 +57,7 @@ interface HomeScreenProps {
   onboardingData?: Partial<OnboardingData>;
   onStartCanvas: (sourceType?: string) => void;
   onResetOnboarding?: () => void;
+  onLogout?: () => void;
   initialNav?: NavItemType;
 }
 
@@ -181,6 +186,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onboardingData,
   onStartCanvas,
   onResetOnboarding,
+  onLogout,
   initialNav = 'home',
 }) => {
   const shouldReduceMotion = useReducedMotion();
@@ -189,6 +195,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Navigation State (Exact 6 destinations)
   const [activeNav, setActiveNav] = useState<NavItemType>(initialNav);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // Dark Mode Theme State
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('noevis_theme');
+    if (stored === 'Dark') return true;
+    if (stored === 'Light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  const toggleDarkMode = () => {
+    const nextDark = !isDarkMode;
+    setIsDarkMode(nextDark);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('noevis_theme', nextDark ? 'Dark' : 'Light');
+      const root = document.documentElement;
+      if (nextDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+  };
 
   // Sidebar Open / Collapsed State (Desktop)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -235,7 +265,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const confidence = onboardingData?.confidenceLevel || 'Getting familiar';
   const ageGroup = onboardingData?.ageGroup || '18+';
 
-  const handleTryCloseModal = () => {
+  const handleTryCloseModal = useCallback(() => {
     const hasUnsaved = (pasteText && pasteText.trim() !== '') || (linkUrl && linkUrl.trim() !== '') || (youtubeUrl && youtubeUrl.trim() !== '') || selectedUploadFile !== null;
     if (hasUnsaved) {
       if (window.confirm('Do you want to discard your learning material draft?')) {
@@ -263,7 +293,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       setShowSuccessState(false);
       setActiveSourceModal(null);
     }
-  };
+  }, [pasteText, linkUrl, youtubeUrl, selectedUploadFile]);
 
   // Global Escape handler and click outside
   useEffect(() => {
@@ -290,7 +320,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [pasteText, linkUrl, youtubeUrl, selectedUploadFile, activeSourceModal]);
+  }, [activeSourceModal, handleTryCloseModal]);
 
   // Navigation items definition (Exact 6 destinations)
   const mainNavItems = [
@@ -308,6 +338,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const handleNavClick = (navItem: NavItemType) => {
     if (navItem === 'settings') {
       setIsSettingsOpen(true);
+      setShowMobileDrawer(false);
+      return;
+    }
+    if (navItem === 'help') {
+      setIsHelpOpen(true);
       setShowMobileDrawer(false);
       return;
     }
@@ -655,51 +690,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <div className="relative" ref={profileMenuRef}>
                 <div
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="w-full h-[58px] bg-[#FFFFFF] border border-[#E5E7EB] rounded-[14px] p-2.5 flex items-center justify-between hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                  className="w-full min-h-[62px] bg-[#FFFFFF] border border-[#E5E7EB] rounded-[16px] p-3 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors cursor-pointer"
                 >
-                  <div className="flex items-center gap-2.5 truncate">
-                    <div className="w-9 h-9 rounded-full bg-[#111111] text-white text-[12px] font-bold flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-3 truncate">
+                    <div className="w-10 h-10 rounded-full bg-[#111827] text-white text-[14px] font-bold flex items-center justify-center shrink-0">
                       {userInitials}
                     </div>
                     <div className="truncate text-left">
-                      <p className="text-[13.5px] font-semibold text-[#111111] truncate leading-tight">
+                      <p className="text-[15px] font-semibold text-[#111827] truncate leading-tight">
                         {userName}
                       </p>
-                      <p className="text-[11.5px] text-[#6B7280] truncate mt-0.5">
+                      <p className="text-[13px] text-[#667085] truncate mt-0.5">
                         {userEmail}
                       </p>
                     </div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-[#111111] shrink-0 ml-1.5" />
+                  <ChevronDown className={`w-4.5 h-4.5 text-[#667085] shrink-0 ml-1.5 transition-transform duration-200 ${showProfileMenu ? 'rotate-180 text-[#111827]' : ''}`} />
                 </div>
 
                 {/* Profile popover */}
                 <AnimatePresence>
                   {showProfileMenu && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                      initial={{ opacity: 0, scale: 0.96, y: 6 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.97, y: 6 }}
+                      exit={{ opacity: 0, scale: 0.96, y: 6 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-[66px] left-0 right-0 bg-white border border-[#E5E7EB] rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-2.5 text-left flex flex-col gap-1 z-50"
+                      className="absolute bottom-[72px] left-0 right-0 w-[290px] bg-[#FFFFFF] border border-[#E5E7EB] rounded-[20px] shadow-[0_16px_40px_-10px_rgba(0,0,0,0.12)] p-3 text-left flex flex-col gap-1 z-50 overflow-hidden"
                     >
-                      <div className="px-2 py-1.5 border-b border-[#E5E7EB] text-xs text-[#6B7280]">
-                        <p className="font-semibold text-[#111111] text-[13px]">{userName}</p>
-                        <p className="text-[11px] mt-0.5">{studyContext} • {confidence}</p>
+                      {/* User Header */}
+                      <div className="px-3 py-3 border-b border-[#E5E7EB] flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-[#111827] text-white text-[15px] font-bold flex items-center justify-center shrink-0">
+                          {userInitials}
+                        </div>
+                        <div className="truncate">
+                          <p className="font-bold text-[#111827] text-[15px] truncate">{userName}</p>
+                          <p className="text-[13px] text-[#667085] truncate mt-0.5">{userEmail}</p>
+                        </div>
                       </div>
 
+                      {/* Manage Settings */}
                       <button
                         type="button"
                         onClick={() => {
                           setShowProfileMenu(false);
-                          setActiveNav('settings');
+                          setIsSettingsOpen(true);
                         }}
-                        className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
+                        className="w-full text-left px-3.5 py-3 rounded-[12px] text-[15px] font-medium text-[#111827] hover:bg-[#F3F4F6] flex items-center gap-3.5 transition-colors cursor-pointer mt-1"
                       >
-                        <Settings className="w-3.5 h-3.5 text-[#6B7280]" />
+                        <Settings className="w-5 h-5 text-[#667085] stroke-[1.8]" />
                         <span>Manage Settings</span>
                       </button>
 
+                      {/* Reset Onboarding */}
                       {onResetOnboarding && (
                         <button
                           type="button"
@@ -707,12 +750,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             setShowProfileMenu(false);
                             onResetOnboarding();
                           }}
-                          className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
+                          className="w-full text-left px-3.5 py-3 rounded-[12px] text-[15px] font-medium text-[#111827] hover:bg-[#F3F4F6] flex items-center gap-3.5 transition-colors cursor-pointer"
                         >
-                          <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
+                          <RotateCcw className="w-5 h-5 text-[#667085] stroke-[1.8]" />
                           <span>Reset Onboarding</span>
                         </button>
                       )}
+
+                      {/* Appearance Section */}
+                      <div className="pt-2 border-t border-[#E5E7EB] mt-1">
+                        <div className="px-3 py-1.5 text-[12px] font-semibold text-[#667085] uppercase tracking-wider">
+                          Appearance
+                        </div>
+                        <div className="px-3.5 py-2 flex items-center justify-between">
+                          <span className="text-[15px] font-medium text-[#111827]">Dark mode</span>
+                          {/* Large Toggle Switch */}
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isDarkMode}
+                            onClick={toggleDarkMode}
+                            className={`w-12 h-7 rounded-full p-1 transition-colors cursor-pointer relative focus:outline-none ${
+                              isDarkMode ? 'bg-[#111827]' : 'bg-[#E5E7EB]'
+                            }`}
+                          >
+                            <motion.div
+                              className="w-5 h-5 rounded-full bg-white shadow-sm"
+                              animate={{ x: isDarkMode ? 20 : 0 }}
+                              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Log out */}
+                      <div className="pt-1.5 border-t border-[#E5E7EB] mt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            if (onLogout) {
+                              onLogout();
+                            } else {
+                              window.location.reload();
+                            }
+                          }}
+                          className="w-full text-left px-3.5 py-3 rounded-[12px] text-[15px] font-medium text-[#DC2626] hover:bg-[#FEF2F2] flex items-center gap-3.5 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-5 h-5 text-[#DC2626] stroke-[1.8]" />
+                          <span>Log out</span>
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -827,7 +915,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <div className="relative flex justify-center pb-1">
                 <div
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="w-10 h-10 rounded-full bg-[#111111] text-white text-[12px] font-bold flex items-center justify-center shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
+                  className="w-11 h-11 rounded-full bg-[#111827] text-white text-[14px] font-bold flex items-center justify-center shrink-0 cursor-pointer hover:opacity-85 transition-opacity shadow-sm"
                   title={userName}
                 >
                   {userInitials}
@@ -837,26 +925,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <AnimatePresence>
                   {showProfileMenu && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.97, x: 10 }}
+                      initial={{ opacity: 0, scale: 0.96, x: 8 }}
                       animate={{ opacity: 1, scale: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.97, x: 10 }}
+                      exit={{ opacity: 0, scale: 0.96, x: 8 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-0 left-[56px] w-[220px] bg-white border border-[#E5E7EB] rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-2.5 text-left flex flex-col gap-1 z-50"
+                      className="absolute bottom-0 left-[62px] w-[290px] bg-[#FFFFFF] border border-[#E5E7EB] rounded-[20px] shadow-[0_16px_40px_-10px_rgba(0,0,0,0.12)] p-3 text-left flex flex-col gap-1 z-50 overflow-hidden"
                     >
-                      <div className="px-2 py-1.5 border-b border-[#E5E7EB] text-xs text-[#6B7280]">
-                        <p className="font-semibold text-[#111111] text-[13px]">{userName}</p>
-                        <p className="text-[11px] mt-0.5">{userEmail}</p>
+                      {/* User Header */}
+                      <div className="px-3 py-3 border-b border-[#E5E7EB] flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-[#111827] text-white text-[15px] font-bold flex items-center justify-center shrink-0">
+                          {userInitials}
+                        </div>
+                        <div className="truncate">
+                          <p className="font-bold text-[#111827] text-[15px] truncate">{userName}</p>
+                          <p className="text-[13px] text-[#667085] truncate mt-0.5">{userEmail}</p>
+                        </div>
                       </div>
 
+                      {/* Manage Settings */}
                       <button
                         type="button"
                         onClick={() => {
                           setShowProfileMenu(false);
-                          setActiveNav('settings');
+                          setIsSettingsOpen(true);
                         }}
-                        className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
+                        className="w-full text-left px-3.5 py-3 rounded-[12px] text-[15px] font-medium text-[#111827] hover:bg-[#F3F4F6] flex items-center gap-3.5 transition-colors cursor-pointer mt-1"
                       >
-                        <Settings className="w-3.5 h-3.5 text-[#6B7280]" />
+                        <Settings className="w-5 h-5 text-[#667085] stroke-[1.8]" />
                         <span>Manage Settings</span>
                       </button>
 
@@ -867,12 +962,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             setShowProfileMenu(false);
                             onResetOnboarding();
                           }}
-                          className="w-full text-left px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#111111] hover:bg-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
+                          className="w-full text-left px-3.5 py-3 rounded-[12px] text-[15px] font-medium text-[#111827] hover:bg-[#F3F4F6] flex items-center gap-3.5 transition-colors cursor-pointer"
                         >
-                          <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
+                          <RotateCcw className="w-5 h-5 text-[#667085] stroke-[1.8]" />
                           <span>Reset Onboarding</span>
                         </button>
                       )}
+
+                      {/* Appearance Section */}
+                      <div className="pt-2 border-t border-[#E5E7EB] mt-1">
+                        <div className="px-3 py-1.5 text-[12px] font-semibold text-[#667085] uppercase tracking-wider">
+                          Appearance
+                        </div>
+                        <div className="px-3.5 py-2 flex items-center justify-between">
+                          <span className="text-[15px] font-medium text-[#111827]">Dark mode</span>
+                          {/* Large Toggle Switch */}
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isDarkMode}
+                            onClick={toggleDarkMode}
+                            className={`w-12 h-7 rounded-full p-1 transition-colors cursor-pointer relative focus:outline-none ${
+                              isDarkMode ? 'bg-[#111827]' : 'bg-[#E5E7EB]'
+                            }`}
+                          >
+                            <motion.div
+                              className="w-5 h-5 rounded-full bg-white shadow-sm"
+                              animate={{ x: isDarkMode ? 20 : 0 }}
+                              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Log out */}
+                      <div className="pt-1.5 border-t border-[#E5E7EB] mt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            if (onLogout) {
+                              onLogout();
+                            } else {
+                              window.location.reload();
+                            }
+                          }}
+                          className="w-full text-left px-3.5 py-3 rounded-[12px] text-[15px] font-medium text-[#DC2626] hover:bg-[#FEF2F2] flex items-center gap-3.5 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-5 h-5 text-[#DC2626] stroke-[1.8]" />
+                          <span>Log out</span>
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1229,37 +1369,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             />
           )}
 
-          {/* Removed TAB: SETTINGS from here to be handled by the modal overlay */}
-
-          {/* TAB: HELP */}
+          {/* Removed TAB: SETTINGS & TAB: HELP from here to be handled seamlessly by dedicated workspace overlay */}
           {activeNav === 'help' && (
-            <motion.div
-              key="help-tab-content"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={transitionConfig}
-              className="w-full max-w-[840px] flex flex-col text-left"
-            >
-              <div className="pb-4 border-b border-[#E5E7EB] mb-6">
-                <h1 className="text-2xl font-bold text-[#111111]">Help & Documentation</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">How to get the most out of Noevis AI</p>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
-                  <h3 className="text-sm font-bold text-[#111111] mb-1">How does the Desk work?</h3>
-                  <p className="text-xs text-[#6B7280] leading-relaxed">
-                    When you bring a document, video, or pasted text, Noevis extracts core learning concepts, builds step-by-step explanations, creates interactive quizzes, and generates visual diagrams.
-                  </p>
-                </div>
-                <div className="p-5 rounded-[20px] bg-[#FFFFFF] border border-[#E5E7EB]">
-                  <h3 className="text-sm font-bold text-[#111111] mb-1">Supported file formats</h3>
-                  <p className="text-xs text-[#6B7280] leading-relaxed">
-                    PDF, DOCX, PPTX, MP3, MP4, WAV, YouTube video links, web URLs, and direct text paste.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+            <HelpScreen
+              onClose={() => handleNavClick('home')}
+              onOpenSettings={() => setIsSettingsOpen(true)}
+              onResetOnboarding={onResetOnboarding}
+            />
           )}
         </main>
       </div>
@@ -2093,6 +2209,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             userName={userName}
             userInitials={userInitials}
             onboardingData={onboardingData}
+            onResetOnboarding={onResetOnboarding}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ================================================== */}
+      {/* HELP & SUPPORT OVERLAY MODAL                       */}
+      {/* ================================================== */}
+      <AnimatePresence>
+        {isHelpOpen && (
+          <HelpScreen
+            onClose={() => setIsHelpOpen(false)}
+            onOpenSettings={() => {
+              setIsHelpOpen(false);
+              setIsSettingsOpen(true);
+            }}
             onResetOnboarding={onResetOnboarding}
           />
         )}

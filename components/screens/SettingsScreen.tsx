@@ -145,7 +145,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // User Preferences State with LocalStorage Persistence
   const [language, setLanguage] = useState<string>(() => {
     if (typeof window === 'undefined') return 'English';
-    return localStorage.getItem('noevis_language') || 'English';
+    const stored = localStorage.getItem('noevis_language');
+    if (stored === 'Hindi') return 'हिन्दी';
+    return stored || 'English';
   });
 
   const [theme, setTheme] = useState<string>(() => {
@@ -307,7 +309,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               onChange={handleLanguageChange}
               options={[
                 { value: 'English', label: 'English' },
-                { value: 'Hindi', label: 'Hindi' }
+                { value: 'हिन्दी', label: 'हिन्दी' }
               ]}
               minWidth="min-w-[180px] sm:min-w-[200px]"
             />

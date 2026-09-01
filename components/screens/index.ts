@@ -9,3 +9,4 @@ export { CreateDeskScreen } from './CreateDeskScreen';
 export { LibraryScreen } from './LibraryScreen';
 export { ActivityScreen } from './ActivityScreen';
 export { SettingsScreen } from './SettingsScreen';
+export { HelpScreen } from './HelpScreen';

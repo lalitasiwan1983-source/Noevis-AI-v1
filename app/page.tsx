@@ -56,7 +56,24 @@ export default function NoevisApp() {
     setScreen('home');
   };
 
-  const handleStartCanvas = (_sourceType?: string) => {
+  const [activeSourceType, setActiveSourceType] = useState<string>('document');
+  const [activeDeskTitle, setActiveDeskTitle] = useState<string>('Biology: Photosynthesis & Cellular Respiration');
+
+  const handleStartCanvas = (sourceType?: string) => {
+    if (sourceType) {
+      setActiveSourceType(sourceType);
+      if (sourceType === 'youtube') {
+        setActiveDeskTitle('Cellular Energetics & Respiration (Lecture)');
+      } else if (sourceType === 'document' || sourceType === 'pdf') {
+        setActiveDeskTitle('Biology: NCERT Chapter 6 Life Processes');
+      } else if (sourceType === 'text') {
+        setActiveDeskTitle('Bioenergetics & Metabolic Pathways Notes');
+      } else if (sourceType === 'link') {
+        setActiveDeskTitle('Plant Physiology Research & Light Reactions');
+      } else {
+        setActiveDeskTitle('Biology: Photosynthesis & Cellular Respiration');
+      }
+    }
     setScreen('canvas');
   };
 
@@ -70,6 +87,11 @@ export default function NoevisApp() {
     }
     setOnboardingData({});
     setScreen('onboarding');
+  };
+
+  const handleLogout = () => {
+    setUserEmail('');
+    setScreen('welcome');
   };
 
   return (
@@ -106,6 +128,7 @@ export default function NoevisApp() {
             onboardingData={onboardingData}
             onStartCanvas={handleStartCanvas}
             onResetOnboarding={handleResetOnboarding}
+            onLogout={handleLogout}
           />
         )}
 
@@ -113,6 +136,8 @@ export default function NoevisApp() {
           <CanvasScreen
             key="canvas-screen"
             userEmail={userEmail}
+            deskTitle={activeDeskTitle}
+            sourceType={activeSourceType}
             onboardingData={onboardingData}
             onResetOnboarding={handleResetOnboarding}
             onBackToHome={() => setScreen('home')}
