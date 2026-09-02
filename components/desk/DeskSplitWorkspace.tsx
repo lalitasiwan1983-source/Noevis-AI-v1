@@ -73,11 +73,39 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
 }) => {
   const { success, info } = useToast();
 
-  // 1. SIDEBAR RESIZING & COLLAPSE STATE
-  const [sidebarWidth, setSidebarWidth] = useState<number>(300);
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  // 1. SIDEBAR RESIZING & COLLAPSE STATE (persisted)
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('noevis_sidebar_width');
+      if (saved) {
+        const parsed = Number(saved);
+        if (!isNaN(parsed)) return Math.max(260, Math.min(440, parsed));
+      }
+    }
+    return 330;
+  });
+
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('noevis_sidebar_collapsed') === 'true';
+    }
+    return false;
+  });
+
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const sidebarRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('noevis_sidebar_width', sidebarWidth.toString());
+    }
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('noevis_sidebar_collapsed', isCollapsed.toString());
+    }
+  }, [isCollapsed]);
 
   // 2. SIDEBAR PANEL STATE: 'tools' | 'ask_noevis'
   const [sidebarPanel, setSidebarPanel] = useState<'tools' | 'ask_noevis'>('tools');
@@ -96,10 +124,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
 
   // 4. DYNAMIC WORKSPACE TABS STATE
   const [tabs, setTabs] = useState<DeskTab[]>([
-    { id: 'tab-1', title: 'Tab 1', toolType: 'learn', contextName: 'Photosynthesis Overview' },
-    { id: 'tab-2', title: 'Tab 2', toolType: 'practice', contextName: 'Applied Mastery' },
-    { id: 'tab-3', title: 'Tab 3', toolType: 'quiz', contextName: 'Assessment' },
-    { id: 'tab-4', title: 'Tab 4', toolType: 'flashcards', contextName: 'Key Terms' },
+    { id: 'tab-1', title: 'Learn — Photosynthesis', toolType: 'learn', contextName: 'Photosynthesis Overview' },
   ]);
   const [activeTabId, setActiveTabId] = useState<string | null>('tab-1');
 
@@ -117,7 +142,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
-      const newWidth = Math.max(240, Math.min(440, e.clientX));
+      const newWidth = Math.max(260, Math.min(420, e.clientX));
       setSidebarWidth(newWidth);
     };
 
@@ -152,15 +177,15 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
     if (existingTab) {
       setActiveTabId(existingTab.id);
     } else {
-      // Create new workspace tab for this tool
+      // Create new workspace tab for this tool with meaningful title
       const toolLabelMap: Record<DeskToolType, string> = {
-        learn: 'Learn',
-        practice: 'Practice',
-        quiz: 'Quiz',
-        flashcards: 'Flashcards',
-        summary: 'Summary',
-        review: 'Review',
-        notes: 'Notes',
+        learn: `Learn — ${contextData.currentConcept || 'Topic'}`,
+        practice: `Practice — ${contextData.currentConcept || 'Applied'}`,
+        quiz: `Quiz — ${contextData.currentConcept || 'Assessment'}`,
+        flashcards: `Flashcards`,
+        summary: `Summary — ${contextData.topic}`,
+        review: `Review — Key Concepts`,
+        notes: `Notes — ${contextData.currentConcept || 'Scratchpad'}`,
       };
       const newTab: DeskTab = {
         id: `tab-${Date.now()}`,
@@ -177,7 +202,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
   const handleNewTab = () => {
     const newTab: DeskTab = {
       id: `tab-${Date.now()}`,
-      title: `Tab ${tabs.length + 1}`,
+      title: 'New Workspace',
       toolType: 'empty',
     };
     setTabs((prev) => [...prev, newTab]);
@@ -259,82 +284,92 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
       <aside
         ref={sidebarRef}
         style={{ width: isCollapsed ? 72 : sidebarWidth }}
-        className="relative h-full bg-[#F8F9FA] border-r border-[#E5E7EB] flex flex-col shrink-0 transition-all duration-150 ease-out z-20 overflow-hidden"
+        className="relative h-full bg-[#F8F9FA] border-r border-[#E5E7EB] flex flex-col shrink-0 transition-[width] duration-200 ease-out z-20 overflow-hidden"
       >
-        {/* SIDEBAR PANEL 1: REGULAR TOOLS NAVIGATION */}
-        {sidebarPanel === 'tools' && (
-          <div className="flex flex-col h-full justify-between p-4">
-            {/* Top Brand Header */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg text-[#111827]">✦</span>
-                  {!isCollapsed && (
-                    <span className="font-extrabold text-lg text-[#111827] tracking-wider uppercase font-sans">
-                      NOEVIS
-                    </span>
-                  )}
+        <AnimatePresence mode="wait">
+          {/* SIDEBAR PANEL 1: REGULAR TOOLS NAVIGATION */}
+          {sidebarPanel === 'tools' && (
+            <motion.div
+              key="sidebar-tools"
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.18 }}
+              className="flex flex-col h-full justify-between px-6 py-5"
+            >
+              {/* Top Section: Brand & Desk Tools */}
+              <div className="flex flex-col flex-1">
+                {/* Header: NOEVIS Brand & Top Collapse Control */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl text-[#111827]">✦</span>
+                    {!isCollapsed && (
+                      <span className="font-bold text-[22px] text-[#111827] tracking-wider uppercase font-sans">
+                        NOEVIS
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCollapsed((prev) => !prev)}
+                    className="w-8 h-8 rounded-lg hover:bg-[#E5E7EB] flex items-center justify-center text-[#6B7280] transition-colors cursor-pointer"
+                    title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                    aria-label="Toggle sidebar"
+                  >
+                    <ChevronLeft className={`w-4.5 h-4.5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} />
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsCollapsed((prev) => !prev)}
-                  className="w-7 h-7 rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F3F4F6] flex items-center justify-center text-[#6B7280] transition-all cursor-pointer shadow-2xs"
-                  title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-                  aria-label="Toggle sidebar"
-                >
-                  <ChevronLeft className={`w-4 h-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
-                </button>
+                {!isCollapsed && (
+                  <p className="text-[15px] text-[#6B7280] font-medium tracking-tight mb-4 px-0.5">
+                    Desk
+                  </p>
+                )}
+
+                {/* Tools Navigation List */}
+                <nav className="space-y-1">
+                  {DESK_TOOLS.map((tool) => {
+                    const Icon = tool.icon;
+                    const isActive = activeTab?.toolType === tool.id;
+
+                    return (
+                      <button
+                        key={tool.id}
+                        type="button"
+                        onClick={() => handleSelectTool(tool.id)}
+                        className={`w-full flex items-center gap-4 px-4 h-[54px] rounded-xl text-[16.5px] transition-all cursor-pointer relative group border-0 ${
+                          isActive
+                            ? 'bg-[#F4F4F5] text-[#111827] font-semibold'
+                            : 'text-[#1F2937] font-medium hover:bg-[#F4F4F5] hover:text-[#111827]'
+                        }`}
+                        title={tool.label}
+                      >
+                        {/* Subtle left accent indicator line */}
+                        {isActive && (
+                          <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-r-full ${tool.colorClass.replace('text-', 'bg-')}`} />
+                        )}
+
+                        <div className={`w-6 h-6 flex items-center justify-center shrink-0 ${tool.colorClass}`}>
+                          <Icon className="w-[24px] h-[24px] stroke-[2]" />
+                        </div>
+
+                        {!isCollapsed && (
+                          <span className="truncate">{tool.label}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
               </div>
 
-              {!isCollapsed && (
-                <p className="text-xs text-[#6B7280] font-medium tracking-tight mb-5 px-0.5">
-                  Desk
-                </p>
-              )}
+              {/* Natural Breathing Room then Bottom Section: ASK NOEVIS Composer */}
+              <div className="mt-auto pt-4 shrink-0">
+                {/* Single Subtle 1px Divider */}
+                <div className="mb-4 border-t border-[#E5E7EB]" />
 
-              {/* Tools List */}
-              <nav className="space-y-1">
-                {DESK_TOOLS.map((tool) => {
-                  const Icon = tool.icon;
-                  const isActive = activeTab?.toolType === tool.id;
-
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => handleSelectTool(tool.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer relative group ${
-                        isActive
-                          ? 'bg-[#EFF6FF] text-[#1E40AF] font-semibold'
-                          : 'text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827]'
-                      }`}
-                      title={tool.label}
-                    >
-                      {/* Active Left Indicator Bar */}
-                      {isActive && (
-                        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#3B82F6]" />
-                      )}
-
-                      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${tool.colorClass}`}>
-                        <Icon className="w-5 h-5 stroke-[2]" />
-                      </div>
-
-                      {!isCollapsed && (
-                        <span className="truncate">{tool.label}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
-
-              {/* Subtle Divider */}
-              <div className="my-4 border-t border-[#E5E7EB]" />
-
-              {/* ASK NOEVIS ENTRY BUTTON */}
-              <div>
                 {!isCollapsed && (
-                  <p className="text-[11px] font-bold text-[#9CA3AF] tracking-wider uppercase mb-2 px-3">
+                  <p className="text-[12px] font-semibold text-[#9CA3AF] tracking-wider uppercase mb-2.5 px-1">
                     ASK NOEVIS
                   </p>
                 )}
@@ -342,127 +377,118 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
                 <button
                   type="button"
                   onClick={() => setSidebarPanel('ask_noevis')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-[#111827] hover:bg-[#F5F3FF] transition-all cursor-pointer group border border-transparent hover:border-[#DDD6FE]"
+                  className={`w-full flex items-center justify-between px-4 h-[54px] rounded-xl text-[16px] font-medium transition-all cursor-pointer group border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#D1D5DB] hover:bg-[#F9FAFB] ${
+                    isCollapsed ? 'justify-center px-0' : ''
+                  }`}
                   title="Ask Noevis AI"
                 >
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[#7C3AED]">
-                    <Sparkles className="w-5 h-5 stroke-[2] fill-[#7C3AED]/10" />
+                  <div className="flex items-center gap-3.5 truncate">
+                    <Sparkles className="w-[22px] h-[22px] text-[#7C3AED] stroke-[2] shrink-0" />
+                    {!isCollapsed && <span className="text-[#6B7280] truncate">Ask Noevis…</span>}
                   </div>
-                  {!isCollapsed && <span>Ask Noevis</span>}
+                  {!isCollapsed && (
+                    <ArrowUp className="w-4.5 h-4.5 text-[#9CA3AF] group-hover:text-[#111827] transition-colors shrink-0 stroke-[2.5]" />
+                  )}
                 </button>
               </div>
-            </div>
+            </motion.div>
+          )}
 
-            {/* Bottom Controls */}
-            <div className="flex items-center justify-between pt-4 border-t border-[#E5E7EB] shrink-0">
-              <button
-                type="button"
-                onClick={() => info('Light mode active')}
-                className="w-8 h-8 rounded-lg hover:bg-[#F3F4F6] flex items-center justify-center text-[#6B7280] transition-colors cursor-pointer"
-                title="Toggle Theme"
-              >
-                <Sun className="w-4.5 h-4.5 stroke-[1.8]" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsCollapsed((prev) => !prev)}
-                className="w-8 h-8 rounded-lg hover:bg-[#F3F4F6] flex items-center justify-center text-[#6B7280] transition-colors cursor-pointer"
-                title="Collapse Rail"
-              >
-                <ChevronsLeft className={`w-4.5 h-4.5 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* SIDEBAR PANEL 2: DEDICATED ASK NOEVIS CHAT SURFACE */}
-        {sidebarPanel === 'ask_noevis' && (
-          <div className="flex flex-col h-full bg-[#F8F9FA] justify-between p-4">
-            {/* Header: Back to tools & New chat */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB] shrink-0">
-              <button
-                type="button"
-                onClick={() => setSidebarPanel('tools')}
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#374151] hover:text-[#111827] transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {!isCollapsed && <span>Ask Noevis</span>}
-              </button>
-
-              {!isCollapsed && (
+          {/* SIDEBAR PANEL 2: DEDICATED ASK NOEVIS CHAT SURFACE */}
+          {sidebarPanel === 'ask_noevis' && (
+            <motion.div
+              key="sidebar-asknoevis"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 12 }}
+              transition={{ duration: 0.18 }}
+              className="flex flex-col h-full bg-[#F8F9FA] justify-between p-4"
+            >
+              {/* Header: Back to tools & New chat */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB] shrink-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    setAskMessages([
-                      {
-                        id: 'welcome',
-                        sender: 'ai',
-                        text: `New chat session. Ask me anything regarding ${contextData.currentConcept}!`,
-                      },
-                    ]);
-                    success('New Chat Started', 'Ask Noevis conversation cleared.');
-                  }}
-                  className="w-7 h-7 rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F3F4F6] flex items-center justify-center text-[#374151] transition-all cursor-pointer shadow-2xs"
-                  title="New Chat"
+                  onClick={() => setSidebarPanel('tools')}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#374151] hover:text-[#111827] transition-colors cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4" />
+                  {!isCollapsed && <span>Ask Noevis</span>}
                 </button>
-              )}
-            </div>
 
-            {/* Scrollable Conversation History */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1 text-xs sm:text-sm">
-              {askMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`p-3 rounded-2xl max-w-[92%] leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-[#111827] text-white ml-auto font-medium rounded-br-xs'
-                      : 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#374151] mr-auto shadow-2xs rounded-bl-xs'
-                  }`}
-                >
-                  {msg.sender === 'ai' && (
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#7C3AED] mb-1">
-                      <Sparkles className="w-3 h-3 fill-[#7C3AED]" />
-                      <span>Noevis</span>
-                    </div>
-                  )}
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
-                </div>
-              ))}
-
-              {isAiReplying && (
-                <div className="p-3 rounded-2xl bg-[#FFFFFF] border border-[#E5E7EB] text-[#6B7280] text-xs italic mr-auto shadow-2xs flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#7C3AED] animate-ping" />
-                  Reasoning over active workspace...
-                </div>
-              )}
-              <div ref={chatBottomRef} />
-            </div>
-
-            {/* Compact Composer at Bottom */}
-            <form onSubmit={handleSendAskMessage} className="pt-2 shrink-0">
-              <div className="relative flex items-center bg-[#FFFFFF] border border-[#E5E7EB] focus-within:border-[#111827] rounded-2xl p-1.5 shadow-2xs transition-all">
-                <input
-                  type="text"
-                  value={askInput}
-                  onChange={(e) => setAskInput(e.target.value)}
-                  placeholder="Ask something..."
-                  className="w-full bg-transparent px-3 text-xs sm:text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={!askInput.trim() || isAiReplying}
-                  className="w-8 h-8 rounded-xl bg-[#111827] hover:bg-[#1F2937] disabled:bg-[#E5E7EB] text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
-                  title="Send message"
-                >
-                  <ArrowUp className="w-4 h-4 stroke-[2.5]" />
-                </button>
+                {!isCollapsed && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAskMessages([
+                        {
+                          id: 'welcome',
+                          sender: 'ai',
+                          text: `New chat session. Ask me anything regarding ${contextData.currentConcept}!`,
+                        },
+                      ]);
+                      success('New Chat Started', 'Ask Noevis conversation cleared.');
+                    }}
+                    className="w-7 h-7 rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F3F4F6] flex items-center justify-center text-[#374151] transition-all cursor-pointer shadow-2xs"
+                    title="New Chat"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-            </form>
-          </div>
-        )}
+
+              {/* Scrollable Conversation History */}
+              <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1 text-xs sm:text-sm">
+                {askMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`p-3 rounded-2xl max-w-[92%] leading-relaxed ${
+                      msg.sender === 'user'
+                        ? 'bg-[#111827] text-white ml-auto font-medium rounded-br-xs'
+                        : 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#374151] mr-auto shadow-2xs rounded-bl-xs'
+                    }`}
+                  >
+                    {msg.sender === 'ai' && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#7C3AED] mb-1">
+                        <Sparkles className="w-3 h-3 fill-[#7C3AED]" />
+                        <span>Noevis</span>
+                      </div>
+                    )}
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                  </div>
+                ))}
+
+                {isAiReplying && (
+                  <div className="p-3 rounded-2xl bg-[#FFFFFF] border border-[#E5E7EB] text-[#6B7280] text-xs italic mr-auto shadow-2xs flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#7C3AED] animate-ping" />
+                    Reasoning over active workspace...
+                  </div>
+                )}
+                <div ref={chatBottomRef} />
+              </div>
+
+              {/* Compact Composer at Bottom */}
+              <form onSubmit={handleSendAskMessage} className="pt-2 shrink-0">
+                <div className="relative flex items-center bg-[#FFFFFF] border border-[#E5E7EB] focus-within:border-[#111827] rounded-2xl p-1.5 shadow-2xs transition-all">
+                  <input
+                    type="text"
+                    value={askInput}
+                    onChange={(e) => setAskInput(e.target.value)}
+                    placeholder="Ask something..."
+                    className="w-full bg-transparent px-3 text-xs sm:text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!askInput.trim() || isAiReplying}
+                    className="w-8 h-8 rounded-xl bg-[#111827] hover:bg-[#1F2937] disabled:bg-[#E5E7EB] text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    title="Send message"
+                  >
+                    <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Sidebar Drag Resizer Handle */}
         <div
@@ -555,37 +581,19 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start bg-[#FFFFFF]">
           {/* SCENARIO A: EMPTY WORKSPACE STATE */}
           {(!activeTab || activeTab.toolType === 'empty') && (
-            <div className="my-auto flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-6 animate-fade-in py-12">
+            <div className="my-auto flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4 animate-fade-in py-16">
               {/* Stacked Layers Icon inside Soft Blue Circle */}
-              <div className="w-20 h-20 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center text-[#3B82F6] shadow-xs">
-                <Layers className="w-10 h-10 stroke-[1.6]" />
+              <div className="w-16 h-16 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center text-[#3B82F6] shadow-2xs">
+                <Layers className="w-8 h-8 stroke-[1.6]" />
               </div>
 
-              <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+              <div className="space-y-1.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight">
                   Your Desk is ready
                 </h1>
-                <p className="text-sm text-[#6B7280] leading-relaxed max-w-sm">
+                <p className="text-sm text-[#6B7280] leading-relaxed max-w-xs">
                   Select a tool from the sidebar or open a tab to get started.
                 </p>
-              </div>
-
-              {/* Tool Selection Quick Chips */}
-              <div className="pt-4 flex flex-wrap items-center justify-center gap-2 max-w-md">
-                {DESK_TOOLS.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => handleSelectTool(tool.id)}
-                      className="px-3.5 py-2 rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F9FAFB] text-xs font-semibold text-[#374151] flex items-center gap-2 transition-all cursor-pointer shadow-2xs hover:border-[#D1D5DB]"
-                    >
-                      <Icon className={`w-4 h-4 ${tool.colorClass}`} />
-                      <span>{tool.label}</span>
-                    </button>
-                  );
-                })}
               </div>
             </div>
           )}
