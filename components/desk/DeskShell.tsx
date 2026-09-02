@@ -110,7 +110,7 @@ export const DeskShell: React.FC<DeskShellProps> = ({
   }, []);
 
   return (
-    <div id="noevis-desk-shell" className="relative min-h-[100dvh] w-full bg-[#F8F9FA] text-[#111827] overflow-hidden select-none">
+    <div id="noevis-desk-shell" className="relative h-[100dvh] w-full bg-[#F8F9FA] text-[#111827] overflow-hidden select-none">
       {/* UNIFIED SPLIT WORKSPACE */}
       <DeskSplitWorkspace
         contextData={contextData}

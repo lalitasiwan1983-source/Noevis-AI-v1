@@ -1,5 +1,14 @@
 export type DeskWorkspaceMode = 'learn' | 'practice' | 'quiz' | 'review' | 'notes' | 'more';
 
+export type DeskToolType = 'learn' | 'practice' | 'quiz' | 'flashcards' | 'summary' | 'review' | 'notes';
+
+export interface DeskTab {
+  id: string;
+  title: string;
+  toolType: DeskToolType | 'empty';
+  contextName?: string;
+}
+
 export interface DeskConcept {
   id: string;
   title: string;
@@ -22,3 +31,4 @@ export interface DeskContextData {
   sourceType?: string;
   activeMode?: DeskWorkspaceMode;
 }
+
