@@ -7,13 +7,16 @@ import {
   CheckCircle2,
   Sparkles,
   BookOpen,
-  Layers,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { LearnConceptData } from './types';
 
 interface ConceptHeaderProps {
   concept: LearnConceptData;
   totalConcepts: number;
+  onNextConcept?: () => void;
+  onPrevConcept?: () => void;
   onOpenReference?: () => void;
   onOpenAskNoevis?: () => void;
 }
@@ -21,82 +24,105 @@ interface ConceptHeaderProps {
 export const ConceptHeader: React.FC<ConceptHeaderProps> = ({
   concept,
   totalConcepts,
+  onNextConcept,
+  onPrevConcept,
   onOpenReference,
   onOpenAskNoevis,
 }) => {
-  const progressPercentage = Math.round((concept.index / totalConcepts) * 100);
-
   return (
-    <header id="desk-learn-concept-header" className="w-full pb-6 border-b border-[#E5E7EB]/80">
-      {/* Top Meta Badges & Progress Pill */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Concept Index Pill */}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#1F2937] shadow-2xs">
-            <GraduationCap className="w-3.5 h-3.5 text-[#111827]" />
-            <span>Concept {concept.index} of {totalConcepts}</span>
-          </span>
-
-          {/* Reading Time */}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAFAFB] border border-[#E5E7EB] text-xs font-medium text-[#667085]">
-            <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />
-            <span>Est. {concept.estimatedTime}</span>
-          </span>
-
-          {/* Difficulty / Tier */}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0FDF4] border border-[#DCFCE7] text-xs font-medium text-[#166534]">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>{concept.difficulty} Level</span>
-          </span>
+    <header id="desk-learn-concept-header" className="w-full pb-6 border-b border-[#E5E7EB]">
+      {/* 1. Source / Chapter / Concept Breadcrumb (13-14px font, muted gray, 24-28px height, 18-22px bottom margin) */}
+      <div className="flex items-center justify-between h-[26px] mb-[20px]">
+        <div className="flex items-center gap-1.5 text-[13.5px] text-[#667085] font-normal truncate">
+          <span className="text-[#374151] font-semibold">{concept.topic || 'Laws of Motion'}</span>
+          <span className="text-[#9CA3AF] text-xs">›</span>
+          <span className="truncate font-medium text-[#111827]">{concept.title}</span>
         </div>
 
-        {/* Subtle Session Progress Bar */}
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs font-medium text-[#6B7280]">
-            Session: <strong className="font-semibold text-[#111827]">{progressPercentage}%</strong>
-          </span>
-          <div className="w-24 sm:w-28 h-2 rounded-full bg-[#F3F4F6] overflow-hidden">
-            <div
-              className="h-full bg-[#111827] rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
+        {/* Previous / Next Subtle Concept Navigation Controls */}
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            disabled={concept.index <= 1}
+            onClick={onPrevConcept}
+            className={`text-xs font-semibold flex items-center gap-1 transition-all ${
+              concept.index <= 1
+                ? 'opacity-30 cursor-not-allowed text-[#9CA3AF]'
+                : 'text-[#667085] hover:text-[#111827] cursor-pointer'
+            }`}
+          >
+            ‹ Prev
+          </button>
+          <span className="text-[#E5E7EB]">|</span>
+          <button
+            type="button"
+            disabled={concept.index >= totalConcepts}
+            onClick={onNextConcept}
+            className={`text-xs font-semibold flex items-center gap-1 transition-all ${
+              concept.index >= totalConcepts
+                ? 'opacity-30 cursor-not-allowed text-[#9CA3AF]'
+                : 'text-[#4B5BEA] hover:text-[#111827] cursor-pointer font-bold'
+            }`}
+          >
+            Next ›
+          </button>
         </div>
       </div>
 
-      {/* Main Title */}
-      <h1
-        id="learn-concept-title"
-        className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-[#111827] tracking-tight leading-tight sm:leading-snug"
-      >
-        {concept.title}
-      </h1>
+      {/* 2. Main Title Area (30-34px heading, weight 650-700, leading 1.15-1.25) & Subtitle (16-17px, leading 1.5, max-w 650-700px) */}
+      <div className="space-y-2">
+        {/* Subtle Progress Label (12-13px, no dashboard metrics) */}
+        <span className="text-[12.5px] font-medium text-[#667085] block">
+          {concept.index} of {totalConcepts} key ideas
+        </span>
 
-      {/* Contextual Subtitle */}
-      <p className="text-base sm:text-lg text-[#667085] mt-2.5 font-normal max-w-3xl leading-relaxed">
-        {concept.subtitle}
-      </p>
-
-      {/* Quick Action Pills */}
-      <div className="flex flex-wrap items-center gap-2 mt-4 pt-1">
-        <button
-          type="button"
-          onClick={onOpenAskNoevis}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F9FAFB] hover:bg-[#F3F4F6] border border-[#E5E7EB] text-xs font-medium text-[#374151] transition-colors cursor-pointer"
+        <h1
+          id="learn-concept-title"
+          className="text-[32px] font-[675] text-[#111827] tracking-tight leading-[1.2]"
         >
-          <Sparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
-          <span>Ask AI about this</span>
-        </button>
+          {concept.title}
+        </h1>
 
-        <button
-          type="button"
-          onClick={onOpenReference}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F9FAFB] hover:bg-[#F3F4F6] border border-[#E5E7EB] text-xs font-medium text-[#374151] transition-colors cursor-pointer"
-        >
-          <BookOpen className="w-3.5 h-3.5 text-[#6B7280]" />
-          <span>View Source Excerpt</span>
-        </button>
+        <p className="text-[16.5px] leading-[1.5] text-[#667085] max-w-[680px]">
+          {concept.subtitle}
+        </p>
+      </div>
+
+      {/* 3. Est. Time, Difficulty Badge, and Quick Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-5 pt-1.5">
+        <div className="flex items-center gap-2.5 text-[12.5px] text-[#667085]">
+          <span className="inline-flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />
+            <span>Est. {concept.estimatedTime}</span>
+          </span>
+          <span className="text-[#E5E7EB]">·</span>
+          <span className="inline-flex items-center gap-1.5 text-[#166534] font-medium">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>{concept.difficulty}</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenAskNoevis}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-[#F9FAFB] border border-[#E5E7EB] text-xs font-semibold text-[#374151] hover:text-[#111827] transition-all cursor-pointer shadow-2xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" />
+            <span>Ask Noevis</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenReference}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-[#F9FAFB] border border-[#E5E7EB] text-xs font-semibold text-[#374151] hover:text-[#111827] transition-all cursor-pointer shadow-2xs"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-[#6B7280]" />
+            <span>Reference</span>
+          </button>
+        </div>
       </div>
     </header>
   );
 };
+

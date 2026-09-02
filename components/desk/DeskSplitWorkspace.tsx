@@ -82,7 +82,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
         if (!isNaN(parsed)) return Math.max(260, Math.min(440, parsed));
       }
     }
-    return 330;
+    return 304;
   });
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -295,16 +295,16 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.18 }}
-              className="flex flex-col h-full justify-between px-6 py-5"
+              className="flex flex-col h-full justify-between px-[20px] py-5"
             >
               {/* Top Section: Brand & Desk Tools */}
               <div className="flex flex-col flex-1">
-                {/* Header: NOEVIS Brand & Top Collapse Control */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl text-[#111827]">✦</span>
+                {/* Header: NOEVIS Brand & Top Collapse Control (Height 36-40px, Logo 24-26px, Wordmark 17-18px) */}
+                <div className="flex items-center justify-between h-[38px] mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[25px] leading-none text-[#111827]">✦</span>
                     {!isCollapsed && (
-                      <span className="font-bold text-[22px] text-[#111827] tracking-wider uppercase font-sans">
+                      <span className="font-bold text-[17.5px] text-[#111827] tracking-wider uppercase font-sans">
                         NOEVIS
                       </span>
                     )}
@@ -321,14 +321,15 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
                   </button>
                 </div>
 
+                {/* DESK Label (Top margin 24-28px, Label 11-12px, Medium/semibold, muted neutral, increased spacing) */}
                 {!isCollapsed && (
-                  <p className="text-[15px] text-[#6B7280] font-medium tracking-tight mb-4 px-0.5">
+                  <p className="text-[11.5px] text-[#9CA3AF] font-semibold tracking-wider uppercase mt-6 mb-3 px-1">
                     Desk
                   </p>
                 )}
 
-                {/* Tools Navigation List */}
-                <nav className="space-y-1">
+                {/* Tools Navigation List (Row height 50-52px, Radius 12px, Horizontal padding 12-14px, Icon 21-23px, Gap 12px, Text 16px font weight 500) */}
+                <nav className="space-y-[5px]">
                   {DESK_TOOLS.map((tool) => {
                     const Icon = tool.icon;
                     const isActive = activeTab?.toolType === tool.id;
@@ -338,7 +339,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
                         key={tool.id}
                         type="button"
                         onClick={() => handleSelectTool(tool.id)}
-                        className={`w-full flex items-center gap-4 px-4 h-[54px] rounded-xl text-[16.5px] transition-all cursor-pointer relative group border-0 ${
+                        className={`w-full flex items-center gap-3 px-[13px] h-[51px] rounded-[12px] text-[16px] transition-all cursor-pointer relative group border-0 ${
                           isActive
                             ? 'bg-[#F4F4F5] text-[#111827] font-semibold'
                             : 'text-[#1F2937] font-medium hover:bg-[#F4F4F5] hover:text-[#111827]'
@@ -350,8 +351,8 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
                           <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-r-full ${tool.colorClass.replace('text-', 'bg-')}`} />
                         )}
 
-                        <div className={`w-6 h-6 flex items-center justify-center shrink-0 ${tool.colorClass}`}>
-                          <Icon className="w-[24px] h-[24px] stroke-[2]" />
+                        <div className={`w-[22px] h-[22px] flex items-center justify-center shrink-0 ${tool.colorClass}`}>
+                          <Icon className="w-[22px] h-[22px] stroke-[2]" />
                         </div>
 
                         {!isCollapsed && (
@@ -363,31 +364,25 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
                 </nav>
               </div>
 
-              {/* Natural Breathing Room then Bottom Section: ASK NOEVIS Composer */}
-              <div className="mt-auto pt-4 shrink-0">
+              {/* Natural Breathing Room then Bottom Section: ASK NOEVIS Composer (Height 52-56px, Radius 14-16px, 18-20px above bottom edge) */}
+              <div className="mt-auto shrink-0 pb-[19px]">
                 {/* Single Subtle 1px Divider */}
                 <div className="mb-4 border-t border-[#E5E7EB]" />
-
-                {!isCollapsed && (
-                  <p className="text-[12px] font-semibold text-[#9CA3AF] tracking-wider uppercase mb-2.5 px-1">
-                    ASK NOEVIS
-                  </p>
-                )}
 
                 <button
                   type="button"
                   onClick={() => setSidebarPanel('ask_noevis')}
-                  className={`w-full flex items-center justify-between px-4 h-[54px] rounded-xl text-[16px] font-medium transition-all cursor-pointer group border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#D1D5DB] hover:bg-[#F9FAFB] ${
+                  className={`w-full flex items-center justify-between px-4 h-[54px] rounded-[15px] text-[15.5px] font-medium transition-all cursor-pointer group border border-[#E5E7EB] bg-[#F9FAFB] hover:border-[#D1D5DB] hover:bg-[#FFFFFF] ${
                     isCollapsed ? 'justify-center px-0' : ''
                   }`}
                   title="Ask Noevis AI"
                 >
-                  <div className="flex items-center gap-3.5 truncate">
+                  <div className="flex items-center gap-[12px] truncate">
                     <Sparkles className="w-[22px] h-[22px] text-[#7C3AED] stroke-[2] shrink-0" />
-                    {!isCollapsed && <span className="text-[#6B7280] truncate">Ask Noevis…</span>}
+                    {!isCollapsed && <span className="text-[#9CA3AF] font-normal truncate">Ask Noevis…</span>}
                   </div>
                   {!isCollapsed && (
-                    <ArrowUp className="w-4.5 h-4.5 text-[#9CA3AF] group-hover:text-[#111827] transition-colors shrink-0 stroke-[2.5]" />
+                    <ArrowUp className="w-[20px] h-[20px] text-[#9CA3AF] group-hover:text-[#111827] transition-colors shrink-0 stroke-[2.5]" />
                   )}
                 </button>
               </div>
@@ -503,31 +498,71 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
       {/* ==================================================== */}
       {/* 2. MAIN CENTER AREA (ACTIVE WORKSPACE + TABS)        */}
       {/* ==================================================== */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-[#FFFFFF] overflow-hidden">
-        {/* TOP HEADER BAR (Tabs + Global Controls) */}
-        <header className="h-14 bg-[#FFFFFF] border-b border-[#E5E7EB] px-4 sm:px-6 flex items-center justify-between shrink-0 z-10">
-          {/* LEFT: WORKSPACE TABS */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2 max-w-[80%]">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-[#F7F8FA] overflow-hidden">
+        {/* 2A. GLOBAL HEADER */}
+        <header className="h-[56px] bg-[#FFFFFF] border-b border-[#E5E7EB] px-6 flex items-center justify-between shrink-0 z-10">
+          <div className="flex items-center">
+             {/* Left side empty or reserved for future global nav */}
+          </div>
+
+          {/* RIGHT: SEARCH, NOTIFICATIONS, PROFILE */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Search Button */}
+            <button
+              type="button"
+              onClick={onOpenReference}
+              className="w-10 h-10 rounded-full bg-[#FFFFFF] hover:bg-[#F9FAFB] flex items-center justify-center text-[#4B5563] transition-all cursor-pointer"
+              title="Search Desk (⌘K)"
+            >
+              <Search className="w-[20px] h-[20px] stroke-[1.8]" />
+            </button>
+
+            {/* Notification Bell */}
+            <button
+              type="button"
+              onClick={() => info('No pending alerts')}
+              className="w-10 h-10 rounded-full bg-[#FFFFFF] hover:bg-[#F9FAFB] flex items-center justify-center text-[#4B5563] transition-all cursor-pointer relative"
+              title="Notifications"
+            >
+              <Bell className="w-[20px] h-[20px] stroke-[1.8]" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#EF4444] border-2 border-white" />
+            </button>
+
+            {/* Profile Avatar */}
+            <div
+              className="w-[34px] h-[34px] rounded-full bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] flex items-center justify-center text-xs font-bold cursor-pointer ml-1"
+              title={userEmail}
+            >
+              {userInitials}
+            </div>
+          </div>
+        </header>
+
+        {/* 2B. WORKSPACE TABS */}
+        <div className="h-[48px] bg-[#FFFFFF] border-b border-[#E5E7EB] px-5 sm:px-6 flex items-center shrink-0 z-10">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full">
             {tabs.map((tab) => {
               const isActive = tab.id === activeTabId;
               return (
                 <div
                   key={tab.id}
                   onClick={() => setActiveTabId(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-lg text-xs font-semibold transition-all cursor-pointer shrink-0 border-b-2 ${
+                  className={`flex items-center gap-2 px-3.5 h-[34px] rounded-lg text-[14px] font-medium transition-all cursor-pointer shrink-0 border border-transparent ${
                     isActive
-                      ? 'border-[#3B82F6] text-[#111827] bg-[#FFFFFF]'
-                      : 'border-transparent text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB]'
+                      ? 'text-[#111827] bg-[#F4F4F5] font-semibold'
+                      : 'text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB]'
                   }`}
                 >
-                  <span>{tab.title}</span>
+                  <span className="truncate max-w-[160px]">{tab.title}</span>
                   <button
                     type="button"
                     onClick={(e) => handleCloseTab(e, tab.id)}
-                    className="w-4 h-4 rounded-full hover:bg-[#E5E7EB] flex items-center justify-center text-[#9CA3AF] hover:text-[#111827] transition-colors"
+                    className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
+                      isActive ? 'hover:bg-[#E5E7EB] text-[#6B7280]' : 'hover:bg-[#E5E7EB] text-[#9CA3AF]'
+                    }`}
                     title="Close tab"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-[14px] h-[14px]" />
                   </button>
                 </div>
               );
@@ -537,51 +572,19 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
             <button
               type="button"
               onClick={handleNewTab}
-              className="w-8 h-8 rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F3F4F6] flex items-center justify-center text-[#374151] transition-all cursor-pointer shrink-0 shadow-2xs"
+              className="w-[34px] h-[34px] rounded-lg bg-[#FFFFFF] hover:bg-[#F4F4F5] flex items-center justify-center text-[#6B7280] transition-all cursor-pointer shrink-0 ml-1"
               title="Open New Workspace Tab"
             >
               <Plus className="w-4 h-4" />
             </button>
           </div>
+        </div>
 
-          {/* RIGHT: SEARCH, NOTIFICATIONS, PROFILE */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Search Button */}
-            <button
-              type="button"
-              onClick={onOpenReference}
-              className="w-9 h-9 rounded-full border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F9FAFB] flex items-center justify-center text-[#4B5563] transition-all cursor-pointer shadow-2xs"
-              title="Search Desk (⌘K)"
-            >
-              <Search className="w-4.5 h-4.5 stroke-[1.8]" />
-            </button>
-
-            {/* Notification Bell */}
-            <button
-              type="button"
-              onClick={() => info('No pending alerts')}
-              className="w-9 h-9 rounded-full border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F9FAFB] flex items-center justify-center text-[#4B5563] transition-all cursor-pointer shadow-2xs relative"
-              title="Notifications"
-            >
-              <Bell className="w-4.5 h-4.5 stroke-[1.8]" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#EF4444]" />
-            </button>
-
-            {/* Profile Avatar */}
-            <div
-              className="w-9 h-9 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] flex items-center justify-center text-xs font-bold shadow-2xs cursor-pointer"
-              title={userEmail}
-            >
-              {userInitials}
-            </div>
-          </div>
-        </header>
-
-        {/* CENTER ACTIVE WORKSPACE SURFACE */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start bg-[#FFFFFF]">
+        {/* 2C. CENTER ACTIVE WORKSPACE SURFACE */}
+        <main className="flex-1 overflow-y-auto w-full relative bg-[#F7F8FA]">
           {/* SCENARIO A: EMPTY WORKSPACE STATE */}
           {(!activeTab || activeTab.toolType === 'empty') && (
-            <div className="my-auto flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4 animate-fade-in py-16">
+            <div className="my-auto h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4 animate-fade-in py-16">
               {/* Stacked Layers Icon inside Soft Blue Circle */}
               <div className="w-16 h-16 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center text-[#3B82F6] shadow-2xs">
                 <Layers className="w-8 h-8 stroke-[1.6]" />
@@ -600,7 +603,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
 
           {/* SCENARIO B: ACTIVE TOOL WORKSPACE */}
           {activeTab && activeTab.toolType !== 'empty' && (
-            <div className="w-full h-full max-w-5xl mx-auto">
+            <div className="w-full">
               {activeTab.toolType === 'learn' && (
                 <LearnExperience
                   conceptIndex={conceptIndex}
@@ -673,7 +676,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
         {/* ==================================================== */}
         {/* 3. SUBTLE BOTTOM CONTEXT FOOTER                       */}
         {/* ==================================================== */}
-        <footer className="h-14 bg-[#FFFFFF] border-t border-[#E5E7EB] px-4 sm:px-6 flex items-center justify-between shrink-0 font-sans text-xs text-[#6B7280] z-10">
+        <footer className="h-[44px] bg-[#FFFFFF] border-t border-[#E5E7EB] px-4 sm:px-6 flex items-center justify-between shrink-0 font-sans text-xs text-[#6B7280] z-10">
           {/* LEFT CONTEXT SUMMARY */}
           <div className="flex items-center gap-3">
             <button
