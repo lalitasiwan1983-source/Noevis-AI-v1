@@ -1,20 +1,19 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { QuizIntro } from './QuizIntro';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { QuizHeader } from './QuizHeader';
 import { QuizQuestionView } from './QuizQuestionView';
-import { QuizAnswerFeedback } from './QuizAnswerFeedback';
 import { QuizResultView } from './QuizResultView';
-import { QUIZ_QUESTIONS } from './data';
+import { getQuizQuestionsForSource } from './data';
 import { QuizResultSummary, QuizQuestion } from './types';
 import { DeskWorkspaceMode } from '../types';
-import { useToast } from '@/components/design-system/Toast';
 
 interface QuizExperienceProps {
   topicTitle?: string;
   chapterTitle?: string;
   currentConceptIndex?: number;
+  sourceName?: string;
+  conceptTitle?: string;
   onSwitchToLearn?: () => void;
   onOpenAskNoevis?: () => void;
   onChangeMode?: (mode: DeskWorkspaceMode) => void;
@@ -25,118 +24,125 @@ export const QuizExperience: React.FC<QuizExperienceProps> = ({
   topicTitle = 'Biology',
   chapterTitle = 'Chapter 6: Life Processes',
   currentConceptIndex = 1,
+  sourceName,
+  conceptTitle,
   onSwitchToLearn,
   onOpenAskNoevis,
   onChangeMode,
   onSelectConcept,
 }) => {
-  const { success, info } = useToast();
+  // 1. Resolve source-aware question bank (10 questions, 4 options each)
+  const questions: QuizQuestion[] = useMemo(() => {
+    return getQuizQuestionsForSource(sourceName, conceptTitle, topicTitle);
+  }, [sourceName, conceptTitle, topicTitle]);
 
-  // Quiz state machine: 'intro' | 'question' | 'result'
-  const [step, setStep] = useState<'intro' | 'question' | 'result'>('intro');
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const totalQuestions = questions.length;
 
-  // Map of questionId -> selected Option IDs
-  const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  // Map of questionId -> isSubmitted
-  const [submissions, setSubmissions] = useState<Record<string, boolean>>({});
+  // 2. Active quiz state: question index, current answer, answers history
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  // Map of questionId -> selectedOptionId
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  // Selected option for the current question
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  // Smooth question transition flag
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
 
-  const totalQuestions = QUIZ_QUESTIONS.length;
-  const currentQuestion = QUIZ_QUESTIONS[currentQuestionIndex] || QUIZ_QUESTIONS[0];
-  const selectedOptionIds = useMemo(() => {
-    return answers[currentQuestion.id] || [];
-  }, [answers, currentQuestion.id]);
-  const isCurrentSubmitted = Boolean(submissions[currentQuestion.id]);
+  const currentQuestion = questions[currentQuestionIndex] || questions[0];
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
 
-  // Compute correctness for the current question
-  const isCurrentCorrect = useMemo(() => {
-    if (!isCurrentSubmitted) return false;
-    const correctOptionIds = currentQuestion.options
-      .filter((opt) => opt.isCorrect)
-      .map((opt) => opt.id);
+  // Synchronize current selection when question index changes
+  useEffect(() => {
+    setSelectedOptionId(userAnswers[currentQuestion.id] || null);
+  }, [currentQuestionIndex, currentQuestion.id, userAnswers]);
 
-    if (currentQuestion.type === 'multi-select') {
-      const hasAllCorrect = correctOptionIds.every((id) => selectedOptionIds.includes(id));
-      const hasNoIncorrect = selectedOptionIds.every((id) => correctOptionIds.includes(id));
-      return hasAllCorrect && hasNoIncorrect;
-    } else {
-      return (
-        selectedOptionIds.length === 1 &&
-        correctOptionIds.includes(selectedOptionIds[0])
-      );
-    }
-  }, [currentQuestion, selectedOptionIds, isCurrentSubmitted]);
-
-  // Toggle option selection
-  const handleToggleOption = (optionId: string) => {
-    if (isCurrentSubmitted) return;
-
-    if (currentQuestion.type === 'multi-select') {
-      setAnswers((prev) => {
-        const current = prev[currentQuestion.id] || [];
-        const next = current.includes(optionId)
-          ? current.filter((id) => id !== optionId)
-          : [...current, optionId];
-        return { ...prev, [currentQuestion.id]: next };
-      });
-    } else {
-      // Single choice / True-False
-      setAnswers((prev) => ({
-        ...prev,
-        [currentQuestion.id]: [optionId],
-      }));
-    }
-  };
-
-  // Submit Answer
-  const handleSubmitAnswer = () => {
-    if (selectedOptionIds.length === 0) return;
-
-    setSubmissions((prev) => ({
-      ...prev,
-      [currentQuestion.id]: true,
-    }));
-
-    // Trigger toast
-    const correctOptionIds = currentQuestion.options
-      .filter((opt) => opt.isCorrect)
-      .map((opt) => opt.id);
-
-    let isCorrect = false;
-    if (currentQuestion.type === 'multi-select') {
-      isCorrect =
-        correctOptionIds.every((id) => selectedOptionIds.includes(id)) &&
-        selectedOptionIds.every((id) => correctOptionIds.includes(id));
-    } else {
-      isCorrect = selectedOptionIds.length === 1 && correctOptionIds.includes(selectedOptionIds[0]);
-    }
-
-    if (isCorrect) {
-      success('Correct!', 'Accurate grasp of this biological mechanism.');
-    } else {
-      info('Concept Review', 'Check the explanation below to clarify the principle.');
-    }
-  };
+  // Handle option selection
+  const handleSelectOption = useCallback((optionId: string) => {
+    setSelectedOptionId(optionId);
+  }, []);
 
   // Advance to next question or complete quiz
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+  const handleNextQuestion = useCallback(() => {
+    if (!selectedOptionId) return;
+
+    // 1. Lock answer silently
+    setUserAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: selectedOptionId,
+    }));
+
+    if (isLastQuestion) {
+      // Transition to result view
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setIsCompleted(true);
+        setIsTransitioning(false);
+      }, 200);
     } else {
-      setStep('result');
-      success('Quiz Completed', 'Review your concept mastery and personalized insights.');
+      // Trigger subtle content transition
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setIsTransitioning(false);
+      }, 200);
     }
-  };
+  }, [selectedOptionId, currentQuestion.id, isLastQuestion]);
 
-  // Retake Quiz
+  // Keyboard navigation support: Arrow Up/Down, 1-4, A-D, Space, Enter
+  useEffect(() => {
+    if (isCompleted) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent taking actions if user is typing in an input
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      const options = currentQuestion.options;
+      const currentIndex = options.findIndex((opt) => opt.id === selectedOptionId);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+        handleSelectOption(options[nextIndex].id);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+        handleSelectOption(options[prevIndex].id);
+      } else if (['1', '2', '3', '4'].includes(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (options[idx]) {
+          e.preventDefault();
+          handleSelectOption(options[idx].id);
+        }
+      } else if (['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D'].includes(e.key)) {
+        const letter = e.key.toUpperCase();
+        const opt = options.find((o) => o.letter.toUpperCase() === letter);
+        if (opt) {
+          e.preventDefault();
+          handleSelectOption(opt.id);
+        }
+      } else if (e.key === 'Enter') {
+        if (selectedOptionId) {
+          e.preventDefault();
+          handleNextQuestion();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCompleted, currentQuestion, selectedOptionId, handleSelectOption, handleNextQuestion]);
+
+  // Retake quiz from question 1
   const handleRetakeQuiz = () => {
-    setAnswers({});
-    setSubmissions({});
+    setUserAnswers({});
+    setSelectedOptionId(null);
     setCurrentQuestionIndex(0);
-    setStep('question');
+    setIsCompleted(false);
   };
 
-  // Review a specific concept in Learn mode
+  // Review a specific concept in Learn
   const handleReviewConcept = (conceptIdx: number) => {
     if (onSelectConcept) {
       onSelectConcept(conceptIdx);
@@ -148,24 +154,16 @@ export const QuizExperience: React.FC<QuizExperienceProps> = ({
     }
   };
 
-  // Build Quiz Result Summary
+  // Generate result summary when completed
   const summary: QuizResultSummary = useMemo(() => {
     let score = 0;
     const masteredMap: Record<string, number> = {};
     const reviewMap: Record<string, { conceptIndex: number; countWrong: number }> = {};
 
-    QUIZ_QUESTIONS.forEach((q) => {
-      const qSelected = answers[q.id] || [];
-      const correctOptionIds = q.options.filter((opt) => opt.isCorrect).map((opt) => opt.id);
-
-      let isCorrect = false;
-      if (q.type === 'multi-select') {
-        isCorrect =
-          correctOptionIds.every((id) => qSelected.includes(id)) &&
-          qSelected.every((id) => correctOptionIds.includes(id));
-      } else {
-        isCorrect = qSelected.length === 1 && correctOptionIds.includes(qSelected[0]);
-      }
+    questions.forEach((q) => {
+      const chosenId = userAnswers[q.id];
+      const correctOpt = q.options.find((opt) => opt.isCorrect);
+      const isCorrect = chosenId && correctOpt && chosenId === correctOpt.id;
 
       if (isCorrect) {
         score += 1;
@@ -192,20 +190,19 @@ export const QuizExperience: React.FC<QuizExperienceProps> = ({
       countWrong: data.countWrong,
     }));
 
-    // Generate intelligent Noevis diagnostic insight
     let noevisInsight = '';
     if (percentage === 100) {
       noevisInsight =
-        'Exceptional mastery across all evaluated topics! You demonstrated precise recall of water photolysis in PS II, Calvin cycle stoichiometry (9 ATP / 6 NADPH), glycolytic net ATP yield, and chemiosmotic rotary catalysis.';
+        'Flawless mastery! You demonstrated precise conceptual recall and accurate reasoning across all evaluated concepts with zero misconceptions.';
     } else if (percentage >= 80) {
       noevisInsight =
-        'Strong conceptual foundation. You clearly understand the core electron pathways and respiratory machinery. Revisiting the flagged concept will solidify your remaining edge.';
+        'Strong conceptual foundation. You clearly understand the core principles. Reviewing the flagged concept will solidify your remaining edge.';
     } else if (percentage >= 60) {
       noevisInsight =
-        'You understand the high-level energetic principles well. Mistakes occurred mainly around stoichiometric ratios or fine-grained enzyme locations. A brief targeted review of the highlighted concepts will bridge the gap.';
+        'Good grasp of high-level concepts. Several intermediate details or mechanisms need reinforcement. A targeted review of the highlighted concepts in Learn will solidify these connections.';
     } else {
       noevisInsight =
-        'You have an initial grasp of the cellular processes, but some core pathways (such as light reactions vs. dark reactions) are overlapping. Reviewing the interactive visual diagrams in Learn will give you a clear spatial model.';
+        'Foundational knowledge is forming. Reviewing the structured walkthrough in Learn will clarify the underlying principles and terminology.';
     }
 
     return {
@@ -215,77 +212,50 @@ export const QuizExperience: React.FC<QuizExperienceProps> = ({
       masteredConcepts,
       reviewConcepts,
       noevisInsight,
+      questions,
+      userAnswers,
     };
-  }, [answers, totalQuestions]);
+  }, [questions, userAnswers, totalQuestions]);
 
-  // STEP 1: INTRO
-  if (step === 'intro') {
+  // RESULT VIEW
+  if (isCompleted) {
     return (
-      <QuizIntro
-        topicTitle={topicTitle}
-        chapterTitle={chapterTitle}
-        totalQuestions={totalQuestions}
-        estimatedTime="5 min"
-        onStartQuiz={() => setStep('question')}
-        onSwitchToLearn={onSwitchToLearn}
-        onOpenAskNoevis={onOpenAskNoevis}
-      />
+      <div id="desk-quiz-container" className="w-full h-full flex flex-col min-h-0 overflow-y-auto">
+        <QuizResultView
+          summary={summary}
+          onRetakeQuiz={handleRetakeQuiz}
+          onReviewConcept={handleReviewConcept}
+          onChangeMode={onChangeMode}
+        />
+      </div>
     );
   }
 
-  // STEP 3: RESULT VIEW
-  if (step === 'result') {
-    return (
-      <QuizResultView
-        summary={summary}
-        onRetakeQuiz={handleRetakeQuiz}
-        onReviewConcept={handleReviewConcept}
-        onOpenAskNoevis={onOpenAskNoevis}
-        onChangeMode={onChangeMode}
-      />
-    );
-  }
-
-  // STEP 2: ACTIVE QUESTION VIEW
+  // ACTIVE ASSESSMENT SCREEN (Fixed Viewport, No Page Scroll)
   return (
     <div
-      id="desk-quiz-experience"
-      className="w-full max-w-3xl mx-auto py-6 sm:py-8 px-4 sm:px-6 space-y-6 sm:space-y-8"
+      id="desk-quiz-container"
+      className="w-full h-full flex flex-col justify-between min-h-0 overflow-hidden px-4 sm:px-6 py-4 sm:py-5"
     >
-      {/* 1. Header with subtle progress */}
-      <QuizHeader
-        currentQuestion={currentQuestion}
-        currentIndex={currentQuestionIndex}
-        totalQuestions={totalQuestions}
-        onExitQuiz={() => setStep('intro')}
-        onOpenAskNoevis={onOpenAskNoevis}
-      />
-
-      {/* 2. Focused Question Card */}
-      <section
-        id="quiz-active-question-card"
-        className="p-5 sm:p-7 rounded-3xl bg-[#FFFFFF] border border-[#E5E7EB] shadow-2xs space-y-6"
-      >
-        <QuizQuestionView
-          question={currentQuestion}
-          selectedOptionIds={selectedOptionIds}
-          isSubmitted={isCurrentSubmitted}
-          onToggleOption={handleToggleOption}
-          onSubmitAnswer={handleSubmitAnswer}
+      <div className="w-full max-w-[800px] mx-auto h-full flex flex-col justify-between min-h-0">
+        {/* 1. Header with soft amber Quiz icon and thin progress line */}
+        <QuizHeader
+          currentIndex={currentQuestionIndex}
+          totalQuestions={totalQuestions}
         />
-      </section>
 
-      {/* 3. Feedback & Explanation Card (after submission) */}
-      {isCurrentSubmitted && (
-        <QuizAnswerFeedback
-          question={currentQuestion}
-          isCorrect={isCurrentCorrect}
-          onNextQuestion={handleNextQuestion}
-          onOpenAskNoevis={onOpenAskNoevis}
-          onReviewConcept={handleReviewConcept}
-          isLastQuestion={currentQuestionIndex === totalQuestions - 1}
-        />
-      )}
+        {/* 2. Active Question Workspace & Options & Next CTA */}
+        <div className="flex-1 flex flex-col min-h-0 justify-center my-auto py-2">
+          <QuizQuestionView
+            question={currentQuestion}
+            selectedOptionId={selectedOptionId}
+            onSelectOption={handleSelectOption}
+            onNextQuestion={handleNextQuestion}
+            isLastQuestion={isLastQuestion}
+            isTransitioning={isTransitioning}
+          />
+        </div>
+      </div>
     </div>
   );
 };

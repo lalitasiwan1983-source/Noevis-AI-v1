@@ -1,8 +1,9 @@
 import { PracticeTask } from './types';
 
-export const PRACTICE_TASKS: PracticeTask[] = [
+// Biology Practice Set
+export const BIOLOGY_PRACTICE_TASKS: PracticeTask[] = [
   {
-    id: 'practice-1',
+    id: 'bio-1',
     conceptIndex: 1,
     conceptTitle: 'Light-Dependent Reactions & Photophosphorylation',
     topic: 'Biology',
@@ -61,7 +62,7 @@ export const PRACTICE_TASKS: PracticeTask[] = [
     },
   },
   {
-    id: 'practice-2',
+    id: 'bio-2',
     conceptIndex: 2,
     conceptTitle: 'Calvin Cycle: Carbon Fixation & Glucose Synthesis',
     topic: 'Biology',
@@ -144,7 +145,7 @@ export const PRACTICE_TASKS: PracticeTask[] = [
     },
   },
   {
-    id: 'practice-3',
+    id: 'bio-3',
     conceptIndex: 3,
     conceptTitle: 'Cellular Respiration & Glycolytic Pathway',
     topic: 'Biology',
@@ -163,7 +164,7 @@ export const PRACTICE_TASKS: PracticeTask[] = [
       connectionToLearn:
         'As explored in the Learn module, if the energy investment phase is interrupted, the cell cannot proceed to cleavage or the 4 ATP payoff phase.',
       scientificMechanism:
-        'Because no downstream G3P is generated, pyruvate production drops to zero, depriving mitochondria of fuel for the Krebs cycle and oxidative phosphorylation.',
+        'Because no downstream G3P is generated, pyruvate production drops to zero, depriving mitochondria of fuel for the Krebs cycle.',
     },
     scenarioData: {
       story:
@@ -215,7 +216,7 @@ export const PRACTICE_TASKS: PracticeTask[] = [
     },
   },
   {
-    id: 'practice-4',
+    id: 'bio-4',
     conceptIndex: 4,
     conceptTitle: 'Oxidative Phosphorylation & ATP Yields',
     topic: 'Biology',
@@ -233,8 +234,6 @@ export const PRACTICE_TASKS: PracticeTask[] = [
         'Oxidative phosphorylation couples the exergonic flow of electrons down a redox gradient to the endergonic synthesis of ATP via a proton motive force.',
       connectionToLearn:
         'In the Learn visual, you saw the rotary mechanism of the F₀F₁ ATP Synthase turbine spinning as protons rush back into the mitochondrial matrix.',
-      scientificMechanism:
-        'Oxygen is essential because it is the terminal electron sink. Without O₂, the electron carriers back up, halting proton pumping and stopping the rotary motor.',
     },
     matchingData: {
       leftTitle: 'Component / Carrier',
@@ -268,3 +267,160 @@ export const PRACTICE_TASKS: PracticeTask[] = [
     },
   },
 ];
+
+// Mathematics Practice Set
+export const MATH_PRACTICE_TASKS: PracticeTask[] = [
+  {
+    id: 'math-1',
+    conceptIndex: 1,
+    conceptTitle: 'Differential Calculus & Chain Rule',
+    topic: 'Mathematics',
+    chapter: 'Calculus I: Derivatives',
+    taskType: 'numeric',
+    typeBadge: 'Formula Calculation',
+    title: 'Evaluate Derivative at Point x = 2',
+    instruction:
+      'Given f(x) = (3x² - 4)³, compute the numerical value of the first derivative f\'(2).',
+    contextPill: 'Chain Rule Application',
+    estimatedTime: '2 min',
+    hint: 'Let u = 3x² - 4. Then f(x) = u³. Apply Chain Rule: f\'(x) = 3u² · u\'. Note u(2) = 8 and u\'(2) = 12.',
+    whyExplanation: {
+      coreInsight:
+        'The Chain Rule states d/dx[g(h(x))] = g\'(h(x)) · h\'(x). For (3x² - 4)³, the inner derivative is 6x. At x = 2, f\'(2) = 3(8)² · (12) = 2304.',
+      connectionToLearn:
+        'Recall from the rates of change module that composite functions require scaling the outer rate of change by the inner rate of change.',
+    },
+    numericData: {
+      problemStatement: 'Calculate f\'(2) for f(x) = (3x² - 4)³',
+      unit: '',
+      correctValue: 2304,
+      tolerance: 0,
+      formulaHint: 'f\'(x) = 3(3x² - 4)² · 6x',
+    },
+  },
+  {
+    id: 'math-2',
+    conceptIndex: 2,
+    conceptTitle: 'Optimization & Critical Points',
+    topic: 'Mathematics',
+    chapter: 'Calculus I: Applications',
+    taskType: 'short-answer',
+    typeBadge: 'Mathematical Explanation',
+    title: 'Explain the Second Derivative Test',
+    instruction:
+      'Briefly state how the sign of f\'\'(c) determines whether a critical point c (where f\'(c) = 0) is a local minimum or maximum.',
+    contextPill: 'Concavity & Extreme Values',
+    estimatedTime: '3 min',
+    hint: 'Think about concavity: positive second derivative means concave upward (like a cup), while negative means concave downward.',
+    whyExplanation: {
+      coreInsight:
+        'If f\'\'(c) > 0, the function is concave upward at c, so the horizontal tangent at c is a local minimum. If f\'\'(c) < 0, it is concave downward (local maximum).',
+      connectionToLearn:
+        'Visualizing the curvature helps establish why positive concavity forces tangent slopes to increase from negative to positive across c.',
+    },
+    shortAnswerData: {
+      prompt: 'Describe the outcome when f\'\'(c) > 0 vs f\'\'(c) < 0:',
+      placeholder: 'e.g., When f\'\'(c) > 0 the critical point is a local minimum because the curve is concave up...',
+      acceptableAnswers: ['minimum', 'local min', 'concave up'],
+      sampleAnswer:
+        'When f\'\'(c) > 0, the function is concave upward, making c a local minimum. When f\'\'(c) < 0, the function is concave downward, making c a local maximum.',
+    },
+  },
+];
+
+// Computer Science / Programming Practice Set
+export const CODE_PRACTICE_TASKS: PracticeTask[] = [
+  {
+    id: 'code-1',
+    conceptIndex: 1,
+    conceptTitle: 'Algorithms & Recursion',
+    topic: 'Computer Science',
+    chapter: 'Data Structures & Algorithms',
+    taskType: 'code',
+    typeBadge: 'Code Completion',
+    title: 'Complete the Base Case for Recursive Binary Search',
+    instruction:
+      'Modify the recursive binary search implementation so it correctly returns -1 when the low index exceeds the high index.',
+    contextPill: 'Logarithmic Search Algorithm',
+    estimatedTime: '3 min',
+    hint: 'The search range is empty when low > high. Return -1 to signify target not found.',
+    whyExplanation: {
+      coreInsight:
+        'Without a proper base condition when low > high, recursive search calls will result in infinite recursion and stack overflow errors.',
+      connectionToLearn:
+        'In the array search visualization, the pointer bounds low and high cross each other when the element is absent.',
+    },
+    codeData: {
+      language: 'JavaScript',
+      initialCode: `function binarySearch(arr, target, low, high) {\n  // FIXME: Add base condition here\n  if (low > high) return -1;\n\n  const mid = Math.floor((low + high) / 2);\n  if (arr[mid] === target) return mid;\n  if (arr[mid] > target) return binarySearch(arr, target, low, mid - 1);\n  return binarySearch(arr, target, mid + 1, high);\n}`,
+      goal: 'Return -1 when low > high',
+      expectedOutputOrToken: 'if (low > high) return -1',
+      solutionSnippet: 'if (low > high) return -1;',
+    },
+  },
+  {
+    id: 'code-2',
+    conceptIndex: 2,
+    conceptTitle: 'Time Complexity & Big O Analysis',
+    topic: 'Computer Science',
+    chapter: 'Algorithm Design',
+    taskType: 'multiple-choice',
+    typeBadge: 'Complexity Analysis',
+    title: 'Identify the Time Complexity of Nested Loops',
+    instruction:
+      'Determine the worst-case asymptotic time complexity of an algorithm that performs an outer loop n times and an inner loop i times.',
+    contextPill: 'Asymptotic Bounds',
+    estimatedTime: '2 min',
+    hint: 'Summing 1 + 2 + 3 + ... + n yields n(n+1)/2 operations.',
+    whyExplanation: {
+      coreInsight:
+        'The total iterations equal n(n+1)/2 = 0.5n² + 0.5n. Dropping lower-order terms and coefficients yields O(n²).',
+      connectionToLearn:
+        'In the algorithmic efficiency chapter, triangular sums represent quadratic growth patterns.',
+    },
+    multipleChoiceData: {
+      question: 'What is the Big O time complexity for summing i from 1 to n in nested loops?',
+      options: [
+        {
+          id: 'mc-1',
+          label: 'A',
+          text: 'O(n²)',
+          isCorrect: true,
+          explanation: 'Correct! The sum of the first n integers is n(n+1)/2, which is O(n²).',
+        },
+        {
+          id: 'mc-2',
+          label: 'B',
+          text: 'O(n log n)',
+          isCorrect: false,
+          explanation: 'O(n log n) is typical for divide-and-conquer sorting (Merge Sort), not triangular loop iteration.',
+        },
+        {
+          id: 'mc-3',
+          label: 'C',
+          text: 'O(n)',
+          isCorrect: false,
+          explanation: 'Linear time would require the inner loop to run a constant number of times independent of i.',
+        },
+      ],
+    },
+  },
+];
+
+// Main export array for default compatibility
+export const PRACTICE_TASKS: PracticeTask[] = BIOLOGY_PRACTICE_TASKS;
+
+// Dynamic practice generator based on uploaded context/source
+export function getPracticeTasksForSource(sourceName?: string, conceptTitle?: string): PracticeTask[] {
+  const query = `${sourceName || ''} ${conceptTitle || ''}`.toLowerCase();
+
+  if (query.includes('math') || query.includes('calculus') || query.includes('derivative') || query.includes('algebra')) {
+    return MATH_PRACTICE_TASKS;
+  }
+
+  if (query.includes('code') || query.includes('algorithm') || query.includes('computer') || query.includes('python') || query.includes('java')) {
+    return CODE_PRACTICE_TASKS;
+  }
+
+  return BIOLOGY_PRACTICE_TASKS;
+}

@@ -188,7 +188,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
         notes: `Notes — ${contextData.currentConcept || 'Scratchpad'}`,
       };
       const newTab: DeskTab = {
-        id: `tab-${Date.now()}`,
+        id: `tab-${tabs.length + 1}-${toolType}`,
         title: toolLabelMap[toolType],
         toolType,
         contextName: contextData.currentConcept,
@@ -201,7 +201,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
   // Handle + New Tab creation
   const handleNewTab = () => {
     const newTab: DeskTab = {
-      id: `tab-${Date.now()}`,
+      id: `tab-workspace-${tabs.length + 1}`,
       title: 'New Workspace',
       toolType: 'empty',
     };
@@ -581,7 +581,13 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
         </div>
 
         {/* 2C. CENTER ACTIVE WORKSPACE SURFACE */}
-        <main className="flex-1 overflow-y-auto w-full relative bg-[#F7F8FA]">
+        <main
+          className={`flex-1 w-full relative bg-[#F7F8FA] ${
+            activeTab?.toolType === 'quiz'
+              ? 'overflow-hidden flex flex-col min-h-0'
+              : 'overflow-y-auto'
+          }`}
+        >
           {/* SCENARIO A: EMPTY WORKSPACE STATE */}
           {(!activeTab || activeTab.toolType === 'empty') && (
             <div className="my-auto h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4 animate-fade-in py-16">
@@ -603,7 +609,7 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
 
           {/* SCENARIO B: ACTIVE TOOL WORKSPACE */}
           {activeTab && activeTab.toolType !== 'empty' && (
-            <div className="w-full">
+            <div className={`w-full ${activeTab.toolType === 'quiz' ? 'h-full flex flex-col min-h-0' : ''}`}>
               {activeTab.toolType === 'learn' && (
                 <LearnExperience
                   conceptIndex={conceptIndex}
@@ -618,9 +624,23 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
               {activeTab.toolType === 'practice' && (
                 <PracticeExperience
                   currentConceptIndex={conceptIndex}
+                  hasSourceContext={Boolean(contextData.sourceName || contextData.currentConcept)}
+                  conceptTitle={contextData.currentConcept}
+                  sourceName={contextData.sourceName}
                   onSwitchToLearn={() => handleSelectTool('learn')}
                   onOpenAskNoevis={() => setSidebarPanel('ask_noevis')}
                   onChangeMode={(m) => handleSelectTool(m as DeskToolType)}
+                  onGenerateNewPractice={() => {
+                    const practiceCount = tabs.filter((t) => t.toolType === 'practice').length + 1;
+                    const newTab: DeskTab = {
+                      id: `tab-practice-${tabs.length + 1}`,
+                      title: `Practice ${practiceCount}`,
+                      toolType: 'practice',
+                      contextName: contextData.currentConcept,
+                    };
+                    setTabs((prev) => [...prev, newTab]);
+                    setActiveTabId(newTab.id);
+                  }}
                 />
               )}
 
@@ -629,9 +649,12 @@ export const DeskSplitWorkspace: React.FC<DeskSplitWorkspaceProps> = ({
                   topicTitle={contextData.topic}
                   chapterTitle={contextData.chapter}
                   currentConceptIndex={conceptIndex}
+                  sourceName={contextData.sourceName}
+                  conceptTitle={contextData.currentConcept}
                   onSwitchToLearn={() => handleSelectTool('learn')}
                   onOpenAskNoevis={() => setSidebarPanel('ask_noevis')}
                   onChangeMode={(m) => handleSelectTool(m as DeskToolType)}
+                  onSelectConcept={onSelectConcept}
                 />
               )}
 

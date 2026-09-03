@@ -42,7 +42,7 @@ export const NextBestAction: React.FC<NextBestActionProps> = ({
               Adaptive Recommendation
             </span>
             <h3 className="text-base font-bold text-[#111827] mt-0.5">
-              Reinforce "{conceptTitle}"
+              Reinforce &ldquo;{conceptTitle}&rdquo;
             </h3>
             <p className="text-xs text-[#667085] mt-0.5">
               Choose how you want to solidify your understanding in Noevis.

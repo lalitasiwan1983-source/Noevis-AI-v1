@@ -1,4 +1,12 @@
-export type PracticeTaskType = 'sequence' | 'visual-hotspot' | 'scenario' | 'matching';
+export type PracticeTaskType =
+  | 'sequence'
+  | 'visual-hotspot'
+  | 'scenario'
+  | 'matching'
+  | 'short-answer'
+  | 'multiple-choice'
+  | 'numeric'
+  | 'code';
 
 export interface SequenceItem {
   id: string;
@@ -31,11 +39,47 @@ export interface ScenarioOption {
   feedback: string;
 }
 
+export interface MultipleChoiceOption {
+  id: string;
+  label: string;
+  text: string;
+  isCorrect: boolean;
+  explanation: string;
+}
+
 export interface MatchingPair {
   id: string;
   source: string;
   target: string;
   hint: string;
+}
+
+export interface ShortAnswerData {
+  prompt: string;
+  placeholder: string;
+  acceptableAnswers: string[];
+  sampleAnswer: string;
+}
+
+export interface MultipleChoiceData {
+  question: string;
+  options: MultipleChoiceOption[];
+}
+
+export interface NumericData {
+  problemStatement: string;
+  unit: string;
+  correctValue: number;
+  tolerance: number;
+  formulaHint: string;
+}
+
+export interface CodeData {
+  language: string;
+  initialCode: string;
+  goal: string;
+  expectedOutputOrToken: string;
+  solutionSnippet: string;
 }
 
 export interface PracticeTask {
@@ -54,7 +98,7 @@ export interface PracticeTask {
   whyExplanation: {
     coreInsight: string;
     connectionToLearn: string;
-    scientificMechanism: string;
+    scientificMechanism?: string;
   };
   // Specific payloads
   sequenceData?: {
@@ -78,4 +122,8 @@ export interface PracticeTask {
     rightTitle: string;
     pairs: MatchingPair[];
   };
+  shortAnswerData?: ShortAnswerData;
+  multipleChoiceData?: MultipleChoiceData;
+  numericData?: NumericData;
+  codeData?: CodeData;
 }

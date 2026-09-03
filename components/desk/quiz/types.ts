@@ -1,8 +1,6 @@
-export type QuizQuestionType = 'single-choice' | 'multi-select' | 'true-false' | 'conceptual-choice';
-
 export interface QuizOption {
   id: string;
-  letter: string;
+  letter: string; // 'A' | 'B' | 'C' | 'D'
   text: string;
   detail?: string;
   isCorrect: boolean;
@@ -13,12 +11,14 @@ export interface QuizQuestion {
   questionNumber: number;
   conceptTag: string;
   conceptIndex: number;
-  type: QuizQuestionType;
-  typeBadge: string;
   prompt: string;
   contextSnippet?: string;
   contextFormula?: string;
-  options: QuizOption[];
+  codeSnippet?: {
+    language: string;
+    code: string;
+  };
+  options: QuizOption[]; // exactly 4 single-select options
   explanation: {
     corePrinciple: string;
     whyCorrect: string;
@@ -34,4 +34,7 @@ export interface QuizResultSummary {
   masteredConcepts: Array<{ name: string; conceptIndex: number }>;
   reviewConcepts: Array<{ name: string; conceptIndex: number; countWrong: number }>;
   noevisInsight: string;
+  questions: QuizQuestion[];
+  userAnswers: Record<string, string>; // questionId -> selectedOptionId
 }
+

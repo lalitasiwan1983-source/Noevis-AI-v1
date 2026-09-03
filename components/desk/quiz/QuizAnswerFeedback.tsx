@@ -73,25 +73,27 @@ export const QuizAnswerFeedback: React.FC<QuizAnswerFeedbackProps> = ({
         </div>
 
         {/* Concept Anchor Card */}
-        <div className="p-3.5 rounded-2xl bg-[#FFFFFF]/85 border border-inherit/30 text-xs text-[#374151] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-[#6B7280] shrink-0" />
-            <span className="font-semibold text-[#111827]">
-              {question.explanation.conceptAnchor}
-            </span>
-          </div>
+        {question.explanation.conceptAnchor && (
+          <div className="p-3.5 rounded-2xl bg-[#FFFFFF]/85 border border-inherit/30 text-xs text-[#374151] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-[#6B7280] shrink-0" />
+              <span className="font-semibold text-[#111827]">
+                {question.explanation.conceptAnchor}
+              </span>
+            </div>
 
-          {onReviewConcept && (
-            <button
-              type="button"
-              onClick={() => onReviewConcept(question.explanation.conceptIndex)}
-              className="text-xs font-bold text-[#111827] hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto"
-            >
-              <span>Review this concept</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+            {onReviewConcept && (
+              <button
+                type="button"
+                onClick={() => onReviewConcept(question.explanation.conceptIndex)}
+                className="text-xs font-bold text-[#111827] hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto"
+              >
+                <span>Review this concept</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 3. Action Navigation Row */}
